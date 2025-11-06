@@ -13,7 +13,7 @@ impl FpsCamera {
     pub fn new() -> Self {
         Self {
             speed: 5.0,
-            sensitivity: 0.002,
+            sensitivity: 0.001,
         }
     }
 }

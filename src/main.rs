@@ -113,7 +113,7 @@ fn setup(
         Transform::from_xyz(3.0 , 2.0, 1.0),
     ));
 
-    let my_mesh = create_cube_mesh();  // Deine Funktion
+    let my_mesh = create_cube_mesh(Vec3::ZERO);  // Deine Funktion
     let mesh_handle = meshes.add(my_mesh);  // In Assets einfügen
     
     commands.spawn((
@@ -123,45 +123,50 @@ fn setup(
     ));
 }
 
-fn create_cube_mesh() -> Mesh {
+fn create_cube_mesh(
+    pos: Vec3,
+    vertices: Vec<[f32; 3]>,
+    normals: Vec<[f32; 3]>,
+    indices: Vec<u32>
+) -> Mesh {
      let mut mesh = Mesh::new(
         bevy::render::mesh::PrimitiveTopology::TriangleList,
         RenderAssetUsages::default()
     );
 
-    let vertices: Vec<[f32; 3]> = vec![
+    let temp_vertices: Vec<[f32; 3]> = vec![
         // top
-        [-0.5, 0.5, -0.5], // vertex with index 0
-        [0.5, 0.5, -0.5], // vertex with index 1
-        [0.5, 0.5, 0.5], // etc. until 23
-        [-0.5, 0.5, 0.5],
+        [pos.x - 0.5, pos.y + 0.5, pos.z - 0.5], // vertex mit index 0
+        [pos.x + 0.5, pos.y + 0.5, pos.z - 0.5], // vertex mit index 1
+        [pos.x + 0.5, pos.y + 0.5, pos.z + 0.5], // etc. bis 23
+        [pos.x - 0.5, pos.y + 0.5, pos.z + 0.5],
         // bottom   (-y)
-        [-0.5, -0.5, -0.5],
-        [0.5, -0.5, -0.5],
-        [0.5, -0.5, 0.5],
-        [-0.5, -0.5, 0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z - 0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z - 0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z + 0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z + 0.5],
         // right    (+x)
-        [0.5, -0.5, -0.5],
-        [0.5, -0.5, 0.5],
-        [0.5, 0.5, 0.5],
-        [0.5, 0.5, -0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z - 0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z + 0.5],
+        [pos.x + 0.5, pos.y + 0.5, pos.z + 0.5],
+        [pos.x + 0.5, pos.y + 0.5, pos.z - 0.5],
         // left     (-x)
-        [-0.5, -0.5, -0.5],
-        [-0.5, -0.5, 0.5],
-        [-0.5, 0.5, 0.5],
-        [-0.5, 0.5, -0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z - 0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z + 0.5],
+        [pos.x - 0.5, pos.y + 0.5, pos.z + 0.5],
+        [pos.x - 0.5, pos.y + 0.5, pos.z - 0.5],
         // back     (+z)
-        [-0.5, -0.5, 0.5],
-        [-0.5, 0.5, 0.5],
-        [0.5, 0.5, 0.5],
-        [0.5, -0.5, 0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z + 0.5],
+        [pos.x - 0.5, pos.y + 0.5, pos.z + 0.5],
+        [pos.x + 0.5, pos.y + 0.5, pos.z + 0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z + 0.5],
         // forward  (-z)
-        [-0.5, -0.5, -0.5],
-        [-0.5, 0.5, -0.5],
-        [0.5, 0.5, -0.5],
-        [0.5, -0.5, -0.5],
+        [pos.x - 0.5, pos.y - 0.5, pos.z - 0.5],
+        [pos.x - 0.5, pos.y + 0.5, pos.z - 0.5],
+        [pos.x + 0.5, pos.y + 0.5, pos.z - 0.5],
+        [pos.x + 0.5, pos.y - 0.5, pos.z - 0.5],
     ];
-    let normals: Vec<[f32; 3]> = vec![
+    let temp_normals: Vec<[f32; 3]> = vec![
         // Normals for the top side (towards +y)
         [0.0, 1.0, 0.0],
         [0.0, 1.0, 0.0],
@@ -193,7 +198,7 @@ fn create_cube_mesh() -> Mesh {
         [0.0, 0.0, -1.0],
         [0.0, 0.0, -1.0],
     ];
-    let indices: Vec<u32> = vec![
+    let temp_indices: Vec<u32> = vec![
         0,3,1 , 1,3,2, // triangles making up the top (+y) facing side.
         4,5,7 , 5,6,7, // bottom (-y)
         8,11,9 , 9,11,10, // right (+x)
@@ -201,6 +206,11 @@ fn create_cube_mesh() -> Mesh {
         16,19,17 , 17,19,18, // back (+z)
         20,21,23 , 21,22,23, // forward (-z)
     ];
+
+    // indices.push(temp_indices);
+
+
+
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_indices(Indices::U32(indices));
