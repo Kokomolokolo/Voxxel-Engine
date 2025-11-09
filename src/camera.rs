@@ -30,7 +30,7 @@ pub fn setup_camera(
 
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(3.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(17.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
         FpsCamera::new(),
     ));
 }
