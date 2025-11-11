@@ -73,6 +73,7 @@ impl Chunk {
         let mut vertices: Vec<[f32; 3]> = Vec::new();
         let mut normals: Vec<[f32; 3]> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
+        let mut colors: Vec<[f32; 4]> = Vec::new();
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
                 for y in 0..10 {
@@ -85,10 +86,12 @@ impl Chunk {
                     // dann müssten alle verticies, indices und normals in einem gesammt vec gespeichert werden, und dann alle Zusammen eingefügt werden.
                     let pos = Vec3::new(x as f32, y as f32, z as f32);
                     add_cube_faces(
-                        pos, 
+                        pos,
+                        block,
                         &mut vertices, 
                         &mut normals, 
                         &mut indices,
+                        &mut colors, 
                         !self.is_solid(x as i32, y as i32 + 1, z as i32),
                         !self.is_solid(x as i32, y as i32 - 1, z as i32),
                         !self.is_solid(x as i32 + 1, y as i32, z as i32),
@@ -108,6 +111,7 @@ impl Chunk {
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_indices(Indices::U32(indices));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     
     mesh
     }
@@ -116,9 +120,11 @@ impl Chunk {
 
 fn add_cube_faces(
     pos: Vec3,
+    block_type: BlockType, 
     vertices: &mut Vec<[f32; 3]>,
     normals: &mut Vec<[f32; 3]>,
     indices: &mut Vec<u32>,
+    colors: &mut Vec<[f32; 4]>,
     render_top: bool,
     render_bottom: bool,
     render_right: bool,
@@ -126,6 +132,11 @@ fn add_cube_faces(
     render_back: bool,
     render_front: bool,
 ) {
+    let color = match block_type {
+        BlockType::Grass => [0.3, 0.8, 0.3, 1.0],  // Helles Grün
+        BlockType::Stone => [0.6, 0.6, 0.6, 1.0],  // Grau
+        BlockType::Air => [1.0, 1.0, 1.0, 1.0],    // Wird eh nicht gerendert
+    };
     // Top face (+y)
     if render_top {
         let start = vertices.len() as u32;
@@ -140,6 +151,12 @@ fn add_cube_faces(
             [0.0, 1.0, 0.0],
             [0.0, 1.0, 0.0],
             [0.0, 1.0, 0.0],
+        ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
         ]);
         indices.extend_from_slice(&[
             start, start+3, start+1,
@@ -162,6 +179,12 @@ fn add_cube_faces(
             [0.0, -1.0, 0.0],
             [0.0, -1.0, 0.0],
         ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
+        ]);
         indices.extend_from_slice(&[
             start, start+1, start+3,
             start+1, start+2, start+3,
@@ -182,6 +205,12 @@ fn add_cube_faces(
             [1.0, 0.0, 0.0],
             [1.0, 0.0, 0.0],
             [1.0, 0.0, 0.0],
+        ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
         ]);
         indices.extend_from_slice(&[
             start, start+3, start+1,
@@ -204,6 +233,12 @@ fn add_cube_faces(
             [-1.0, 0.0, 0.0],
             [-1.0, 0.0, 0.0],
         ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
+        ]);
         indices.extend_from_slice(&[
             start, start+1, start+3,
             start+1, start+2, start+3,
@@ -224,6 +259,12 @@ fn add_cube_faces(
             [0.0, 0.0, 1.0],
             [0.0, 0.0, 1.0],
             [0.0, 0.0, 1.0],
+        ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
         ]);
         indices.extend_from_slice(&[
             start, start+3, start+1,
@@ -246,9 +287,19 @@ fn add_cube_faces(
             [0.0, 0.0, -1.0],
             [0.0, 0.0, -1.0],
         ]);
+        colors.extend_from_slice(&[
+            color,
+            color,
+            color,
+            color,
+        ]);
         indices.extend_from_slice(&[
             start, start+1, start+3,
             start+1, start+2, start+3,
         ]);
     }
+}
+
+impl ChunkManager {
+
 }
