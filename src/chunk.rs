@@ -20,6 +20,7 @@ pub enum BlockType {
     Grass,
     Stone
 }
+#[derive(Resource)]
 pub struct ChunkManager {
     chunks: HashMap<IVec2, Entity>
 } // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
@@ -32,7 +33,7 @@ impl Chunk {
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
                 for y in 0..CHUNK_HEIGHT / 2 {
-                    let block_type = if y < 8 {
+                    let block_type = if y < CHUNK_HEIGHT / 2 - 4 {
                         BlockType::Stone
                     } else {
                         BlockType::Grass
@@ -45,7 +46,7 @@ impl Chunk {
         Self { pos, blocks }
     }
     fn index(x: usize, y: usize, z: usize) -> usize {
-        x + y * CHUNK_WIDTH + z * CHUNK_WIDTH * CHUNK_HEIGHT
+        x + z * CHUNK_WIDTH + y * CHUNK_WIDTH * CHUNK_WIDTH
     }
     fn get_block(&self, x: usize, y: usize, z: usize) -> BlockType {
         let idx = Self::index(x, y, z); // groß geschrieben, da eine Funktion von self
@@ -76,7 +77,7 @@ impl Chunk {
         let mut colors: Vec<[f32; 4]> = Vec::new();
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
-                for y in 0..10 {
+                for y in 0..CHUNK_HEIGHT {
                     let block: BlockType = self.get_block(x, y, z);
                     if block == BlockType::Air {
                         continue;
@@ -134,7 +135,7 @@ fn add_cube_faces(
 ) {
     let color = match block_type {
         BlockType::Grass => [0.3, 0.8, 0.3, 1.0],  // Helles Grün
-        BlockType::Stone => [0.6, 0.6, 0.6, 1.0],  // Grau
+        BlockType::Stone => [1.0, 1., 1., 1.0],  // Grau
         BlockType::Air => [1.0, 1.0, 1.0, 1.0],    // Wird eh nicht gerendert
     };
     // Top face (+y)
@@ -213,8 +214,8 @@ fn add_cube_faces(
             color,
         ]);
         indices.extend_from_slice(&[
-            start, start+3, start+1,
-            start+1, start+3, start+2,
+            start, start+1, start+3,
+            start+1, start+2, start+3,
         ]);
     }
     
@@ -267,8 +268,8 @@ fn add_cube_faces(
             color,
         ]);
         indices.extend_from_slice(&[
-            start, start+3, start+1,
-            start+1, start+3, start+2,
+            start, start+1, start+3,
+            start+1, start+2, start+3,
         ]);
     }
     
@@ -301,5 +302,41 @@ fn add_cube_faces(
 }
 
 impl ChunkManager {
+    pub fn new() -> Self {
+        Self {
+            chunks: HashMap::new()
+        }
+    }
+    pub fn spawn_chunk(
+        &mut self,
+        pos: IVec2,
+        commands: &mut Commands,           // Zum Entities erstellen
+        meshes: &mut ResMut<Assets<Mesh>>, // Zum Mesh speichern
+        materials: &mut ResMut<Assets<StandardMaterial>>, // Zum Material speichern
+    ) {
+        if self.chunks.contains_key(&pos) { // wenn der Chunk bereits existiert, dann fertig
+            return
+        }
 
+        let chunk = Chunk::new(pos);
+        let mesh = chunk.build_mesh();
+
+        // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
+
+        let entity = commands.spawn((
+            Mesh3d(meshes.add(mesh)),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::WHITE,
+                cull_mode: None,  // <- Das ist wichtig!
+                ..default()
+            })),
+            Transform::from_xyz(
+                pos.x as f32 * CHUNK_WIDTH as f32,
+                0.0,
+                pos.y as f32 * CHUNK_WIDTH as f32
+            ),
+            chunk,
+        )).id();
+        self.chunks.insert(pos, entity);
+    }
 }
