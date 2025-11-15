@@ -8,6 +8,8 @@ use std::collections::HashMap;
 const CHUNK_WIDTH: usize = 16;
 const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
 
+const RENDER_DISTACE: i32 = 2;
+
 #[derive(Component)]
 pub struct Chunk {
     pos: IVec2,
@@ -338,5 +340,56 @@ impl ChunkManager {
             chunk,
         )).id();
         self.chunks.insert(pos, entity);
+    }
+}
+
+pub fn update_chunks(
+    mut chunk_manager: ResMut<ChunkManager>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    camera_query: Query<&Transform, With<Camera>>,
+) {
+    println!("update chunks called");
+    let Ok(camera_transform) = camera_query.single() else {
+        return;
+    };
+    println!("found cam");
+    // Camera position in chunk cords umrechnen
+    let camera_chunk = IVec2::new(
+        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
+        (camera_transform.translation.y / CHUNK_WIDTH as f32).floor() as i32,
+    );
+
+    for x in -RENDER_DISTACE..RENDER_DISTACE {
+        for z in -RENDER_DISTACE..RENDER_DISTACE {
+            println!("about to spawn");
+            let chunk_pos = camera_chunk + ivec2(x, z);
+            chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
+            println!("spawn");
+        }
+    }
+}
+
+pub fn despawn_chunks(
+    camera_query: Query<&Transform, With<Camera>>,
+    mut chunk_manager: ResMut<ChunkManager>,
+    mut commands: Commands
+) {
+    let mut to_remove = Vec::new();
+    let Ok(camera_transform) = camera_query.single() else {
+        return;
+    };
+    
+    let camera_chunk = IVec2::new(
+        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
+        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
+    );
+    for chunk in &chunk_manager.chunks {
+        let chunk_pos = chunk.0;
+        if (chunk_pos.x - camera_chunk.x).abs() > RENDER_DISTACE + 2 
+            || (chunk_pos.y - camera_chunk.y).abs() > RENDER_DISTACE + 2 { // +2 für einen buffer, falls bewegung zwischen chunks
+            to_remove.push(chunk_pos);
+        }
     }
 }

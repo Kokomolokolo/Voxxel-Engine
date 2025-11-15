@@ -19,7 +19,7 @@ fn main() {
             setup_camera
         ))
         .add_systems(Update, 
-            (camera_movment, camera_look, exit_on_esc))
+            (camera_movment, camera_look, exit_on_esc, update_chunks))
         .run();
 }
 
@@ -40,18 +40,6 @@ fn setup(
         Transform::from_xyz(20.0 , 100.0, 1.0),
     ));
 
-    let chunk = Chunk::new(IVec2::ZERO);
-    let mesh = chunk.build_mesh();
-
-    chunk_manager.spawn_chunk(IVec2::new(0, 0), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(1, 0), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(0, 1), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(1, 1), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(-1, 0), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(-1, 1), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(-1, -1), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(0, -1), &mut commands, &mut meshes, &mut materials);
-    chunk_manager.spawn_chunk(IVec2::new(1, -1), &mut commands, &mut meshes, &mut materials);
 
     // commands.spawn((
     //     Mesh3d(meshes.add(mesh)),
