@@ -2,13 +2,16 @@ use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 
+use noise::{NoiseFn, Perlin};
+//use noise::{Fbm, Perlin};
+
 use std::collections::HashMap;
 
 
 const CHUNK_WIDTH: usize = 16;
 const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
 
-const RENDER_DISTACE: i32 = 2;
+const RENDER_DISTACE: i32 = 20;
 
 #[derive(Component)]
 pub struct Chunk {
@@ -24,23 +27,37 @@ pub enum BlockType {
 }
 #[derive(Resource)]
 pub struct ChunkManager {
-    chunks: HashMap<IVec2, Entity>
+    chunks: HashMap<IVec2, Entity>,
+    noise: Perlin,
 } // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
 // Sie werden dann über Bevy transform an den richtigen Ort platziert, wenn das das einfachste ist.
 
 impl Chunk {
-    pub fn new(pos: IVec2) -> Self {
+    pub fn new(pos: IVec2, noise: &Perlin) -> Self {
         let mut blocks = [BlockType::Air; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT];
         
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
-                for y in 0..CHUNK_HEIGHT / 2 {
-                    let block_type = if y < CHUNK_HEIGHT / 2 - 4 {
+                let world_x = pos.x * CHUNK_WIDTH as i32 + x as i32;
+                let world_z = pos.y * CHUNK_WIDTH as i32 + z as i32;
+                
+                let scale = 0.05;
+                let noise_value = noise.get([world_x as f64 * scale, world_z as f64 * scale]);
+                let base_height = 20;
+                //let height = ((noise_value + 1.0) / 2.0 * 30.0) as i32;
+                let height = base_height + (noise_value / 2.0 * 30.0) as i32;
+
+                if x == 0 && z == 0 {
+                    println!("Chunk {:?}: noise={}, height={}", pos, noise_value, height);
+                }
+
+                for y in 0..height {
+                    let block_type = if y < height - 2 { // die obersten 2 Blöcke sind immer Gras
                         BlockType::Stone
                     } else {
                         BlockType::Grass
                     };
-                    let idx = Self::index(x, y, z);
+                    let idx = Self::index(x, y as usize, z);
                     blocks[idx] = block_type
                 }
             }
@@ -305,8 +322,10 @@ fn add_cube_faces(
 
 impl ChunkManager {
     pub fn new() -> Self {
+        
         Self {
-            chunks: HashMap::new()
+            chunks: HashMap::new(),
+            noise: Perlin::new(12345)
         }
     }
     pub fn spawn_chunk(
@@ -320,7 +339,7 @@ impl ChunkManager {
             return
         }
 
-        let chunk = Chunk::new(pos);
+        let chunk = Chunk::new(pos, &self.noise);
         let mesh = chunk.build_mesh();
 
         // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
@@ -350,25 +369,22 @@ pub fn update_chunks(
     mut materials: ResMut<Assets<StandardMaterial>>,
     camera_query: Query<&Transform, With<Camera>>,
 ) {
-    println!("update chunks called");
     let Ok(camera_transform) = camera_query.single() else {
         return;
     };
-    println!("found cam");
     // Camera position in chunk cords umrechnen
     let camera_chunk = IVec2::new(
         (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
-        (camera_transform.translation.y / CHUNK_WIDTH as f32).floor() as i32,
+        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
     );
 
     for x in -RENDER_DISTACE..RENDER_DISTACE {
         for z in -RENDER_DISTACE..RENDER_DISTACE {
-            println!("about to spawn");
             let chunk_pos = camera_chunk + ivec2(x, z);
             chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
-            println!("spawn");
         }
     }
+    despawn_chunks(camera_query, chunk_manager, commands);
 }
 
 pub fn despawn_chunks(
@@ -389,7 +405,12 @@ pub fn despawn_chunks(
         let chunk_pos = chunk.0;
         if (chunk_pos.x - camera_chunk.x).abs() > RENDER_DISTACE + 2 
             || (chunk_pos.y - camera_chunk.y).abs() > RENDER_DISTACE + 2 { // +2 für einen buffer, falls bewegung zwischen chunks
-            to_remove.push(chunk_pos);
+            to_remove.push(*chunk_pos); // da chunk.0 keine referenz ist
+        }
+    }
+    for pos in to_remove {
+        if let Some(entity) = chunk_manager.chunks.remove(&pos) {
+            commands.entity(entity).despawn();
         }
     }
 }

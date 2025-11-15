@@ -12,7 +12,7 @@ pub struct FpsCamera {
 impl FpsCamera {
     pub fn new() -> Self {
         Self {
-            speed: 5.0,
+            speed: 10.0,
             sensitivity: 0.001,
         }
     }

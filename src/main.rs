@@ -31,13 +31,17 @@ fn setup(
 ) {
     // light
     commands.spawn((
-        PointLight {
-            intensity: 10_000_000.0,
-            range: 200.0,
+        DirectionalLight {
+            illuminance: 1000.0,  // Helligkeit
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(20.0 , 100.0, 1.0),
+        Transform::from_rotation(Quat::from_euler(
+            EulerRot::XYZ,
+            -std::f32::consts::FRAC_PI_4,  // 45° nach unten
+            std::f32::consts::FRAC_PI_4,   // 45° zur Seite
+            0.0
+        )),
     ));
 
 
