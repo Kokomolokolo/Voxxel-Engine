@@ -24,15 +24,26 @@ pub fn setup_camera(
 ) {
     // Maus verstecken und einsperren
     if let Ok(mut window) = window_query.single_mut() {
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+        window.cursor_options.grab_mode = CursorGrabMode::None;
         window.cursor_options.visible = false;
     }
-
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(17.0, 32.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
         FpsCamera::new(),
     ));
+}
+
+pub fn lock_cursor_on_click(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut windows: Query<&mut Window>,
+) {
+    if mouse.just_pressed(MouseButton::Left) {
+        if let Ok(mut window) = windows.single_mut() {
+            window.cursor_options.grab_mode = CursorGrabMode::Locked;
+            window.cursor_options.visible = false;
+        }
+    }
 }
 
 pub fn camera_movment(

@@ -11,7 +11,10 @@ use std::collections::HashMap;
 const CHUNK_WIDTH: usize = 16;
 const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
 
-const RENDER_DISTACE: i32 = 20;
+#[cfg(not(target_arch = "wasm32"))]
+const RENDER_DISTACE: i32 = 12;
+#[cfg(target_arch = "wasm32")]
+const RENDER_DISTACE: i32 = 6;
 
 #[derive(Component)]
 pub struct Chunk {

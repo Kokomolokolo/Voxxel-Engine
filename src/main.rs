@@ -2,16 +2,34 @@
 mod camera;
 mod chunk;
 mod hud;
+mod player;
 
 use camera::*;
 use chunk::*;
 use hud::*;
+use player::*;
 use bevy::prelude::*;
 
 
 fn main() {
+    #[cfg(target_arch = "wasm32")]
+    let window = Window {
+        canvas: Some("#glcanvas".to_string()),
+        fit_canvas_to_parent: true,
+        ..default()
+    };
+    
+    #[cfg(not(target_arch = "wasm32"))]
+    let window = Window {
+        title: "Voxxel Engine".to_string(),
+        resolution: (1280., 720.).into(),
+        ..default()
+    };
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(window),
+            ..default()
+        }))
         .insert_resource(ChunkManager::new())
         .add_plugins(HudPlugin)
         .add_systems(Startup, (
@@ -19,7 +37,7 @@ fn main() {
             setup_camera
         ))
         .add_systems(Update, 
-            (camera_movment, camera_look, exit_on_esc, update_chunks))
+            (camera_movment, camera_look, exit_on_esc, update_chunks, lock_cursor_on_click))
         .run();
 }
 
