@@ -5,6 +5,7 @@ use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 //use noise::{Fbm, Perlin};
 use crate::world_gen::*;
 
+use std::collections::HashMap;
 
 
 pub const CHUNK_WIDTH: usize = 16;
@@ -23,6 +24,10 @@ pub enum BlockType {
     Grass,
     Stone,
     Wood,
+    Leaves,
+    Water,
+    Dirt,
+    Sand,
 }
 
 impl Chunk {
@@ -66,6 +71,19 @@ impl Chunk {
             return true
         }
     }
+    // Über chunkgrenzen hinaus checken. Habe darauf aber gerade keine Lust mehr.
+    // pub fn is_solid_global(&self, 
+    // x: i32, 
+    // y: i32, 
+    // z: i32,
+    // neighbors: &HashMap<IVec2, &Chunk>  // Alle Nachbar-Chunks
+    // ) -> bool{
+    //     if x >= 0 && x < CHUNK_WIDTH as i32 && 
+    //         z >= 0 && z < CHUNK_WIDTH as i32 &&
+    //         y >= 0 && y < CHUNK_HEIGHT as i32 {
+    //             return self.is_solid(x, y, z);  // Normal checken
+    //         }
+    // }
     pub fn build_mesh(&self) -> Mesh {
         // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
         // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
@@ -104,7 +122,7 @@ impl Chunk {
          }
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList, 
-        RenderAssetUsages::default()
+        RenderAssetUsages::default(),
     );
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
@@ -136,6 +154,10 @@ fn add_cube_faces(
         BlockType::Stone => [1.0, 1., 1., 1.0],
         BlockType::Wood => [0.6, 0.4, 0.2, 1.0],
         BlockType::Air => [1.0, 1.0, 1.0, 1.0],
+        BlockType::Leaves => [0.15, 0.6, 0.2, 1.0],
+        BlockType::Water => [0.2, 0.4, 0.8, 0.6],
+        BlockType::Dirt => [0.5, 0.35, 0.2, 1.0],
+        BlockType::Sand => [0.9, 0.8, 0.6, 1.0],
     };
     
     // Top face (+y)

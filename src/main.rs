@@ -11,6 +11,7 @@ use chunk::*;
 use chunk_manager::*;
 use hud::*;
 use player::*;
+
 use bevy::prelude::*;
 // TODO / BUGS
 // Wenn ein in der luft schwebendes teil mit nichts verbunden ist verschidet es(vorallem bei chunk grenzen)
@@ -45,7 +46,7 @@ fn main() {
             (
                 camera_look,
                 exit_on_esc, 
-                update_chunks, 
+                update_chunks,
                 lock_cursor_on_click,
                 // camera_follow_player,
                 player_movement,

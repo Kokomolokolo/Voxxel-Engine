@@ -21,7 +21,7 @@ impl ChunkManager {
     pub fn new() -> Self {
         Self {
             chunks: HashMap::new(),
-            generator: WorldGenerator::new(12345)
+            generator: WorldGenerator::new(12345, 676767)
         }
     }
     pub fn spawn_chunk(
@@ -130,44 +130,47 @@ impl ChunkManager {
     }
 }
 
+use crate::Player;
 pub fn update_chunks(
     mut chunk_manager: ResMut<ChunkManager>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    camera_query: Query<&Transform, With<Camera>>,
+    player_query: Query<&Transform, With<Player>>,
 ) {
-    let Ok(camera_transform) = camera_query.single() else {
+    let Ok(player_transform) = player_query.single() else {
         return;
     };
     // Camera position in chunk cords umrechnen
     let camera_chunk = IVec2::new(
-        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
-        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
+        (player_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
+        (player_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
     );
 
     for x in -RENDER_DISTACE..RENDER_DISTACE {
         for z in -RENDER_DISTACE..RENDER_DISTACE {
             let chunk_pos = camera_chunk + ivec2(x, z);
+            if !chunk_manager.chunks.contains_key(&chunk_pos) {
+            }
             chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
         }
     }
-    despawn_chunks(camera_query, chunk_manager, commands);
+    despawn_chunks(player_query, chunk_manager, commands);
 }
 
 pub fn despawn_chunks(
-    camera_query: Query<&Transform, With<Camera>>,
+    player_query: Query<&Transform, With<Player>>,
     mut chunk_manager: ResMut<ChunkManager>,
     mut commands: Commands
 ) {
     let mut to_remove = Vec::new();
-    let Ok(camera_transform) = camera_query.single() else {
+    let Ok(player_transform) = player_query.single() else {
         return;
     };
     
     let camera_chunk = IVec2::new(
-        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
-        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
+        (player_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
+        (player_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
     );
     for chunk in &chunk_manager.chunks {
         let chunk_pos = chunk.0;
