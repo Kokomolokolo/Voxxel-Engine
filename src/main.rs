@@ -3,9 +3,12 @@ mod camera;
 mod chunk;
 mod hud;
 mod player;
+mod chunk_manager;
+mod world_gen;
 
 use camera::*;
 use chunk::*;
+use chunk_manager::*;
 use hud::*;
 use player::*;
 use bevy::prelude::*;

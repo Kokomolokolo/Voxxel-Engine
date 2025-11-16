@@ -2,19 +2,14 @@ use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 
-use noise::{NoiseFn, Perlin};
 //use noise::{Fbm, Perlin};
+use crate::world_gen::*;
 
-use std::collections::HashMap;
 
 
 pub const CHUNK_WIDTH: usize = 16;
-const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
+pub const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
 
-#[cfg(not(target_arch = "wasm32"))]
-const RENDER_DISTACE: i32 = 12;
-#[cfg(target_arch = "wasm32")]
-const RENDER_DISTACE: i32 = 6;
 
 #[derive(Component)]
 pub struct Chunk {
@@ -26,59 +21,40 @@ pub struct Chunk {
 pub enum BlockType {
     Air,
     Grass,
-    Stone
+    Stone,
+    Wood,
 }
-#[derive(Resource)]
-pub struct ChunkManager {
-    chunks: HashMap<IVec2, Entity>,
-    noise: Perlin,
-} // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
-// Sie werden dann über Bevy transform an den richtigen Ort platziert, wenn das das einfachste ist.
 
 impl Chunk {
-    pub fn new(pos: IVec2, noise: &Perlin) -> Self {
+    pub fn new(pos: IVec2, generator: &WorldGenerator) -> Self {
         let mut blocks = [BlockType::Air; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT];
-        
+
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
                 let world_x = pos.x * CHUNK_WIDTH as i32 + x as i32;
                 let world_z = pos.y * CHUNK_WIDTH as i32 + z as i32;
                 
-                let scale = 0.05;
-                let noise_value = noise.get([world_x as f64 * scale, world_z as f64 * scale]);
-                let base_height = 20;
-                //let height = ((noise_value + 1.0) / 2.0 * 30.0) as i32;
-                let height = base_height + (noise_value / 2.0 * 30.0) as i32;
-
-                if x == 0 && z == 0 {
-                    println!("Chunk {:?}: noise={}, height={}", pos, noise_value, height);
-                }
-
-                for y in 0..height {
-                    let block_type = if y < height - 2 { // die obersten 2 Blöcke sind immer Gras
-                        BlockType::Stone
-                    } else {
-                        BlockType::Grass
-                    };
-                    let idx = Self::index(x, y as usize, z);
-                    blocks[idx] = block_type
+                for y in 0..CHUNK_HEIGHT {
+                    let idx = Self::index(x, y, z);
+                    blocks[idx] = generator.get_block_at(world_x, y as i32, world_z)
                 }
             }
         }
+        generator.generate_trees(&mut blocks, pos);
         Self { pos, blocks }
     }
-    fn index(x: usize, y: usize, z: usize) -> usize {
+    pub fn index(x: usize, y: usize, z: usize) -> usize {
         x + z * CHUNK_WIDTH + y * CHUNK_WIDTH * CHUNK_WIDTH
     }
     pub fn get_block(&self, x: usize, y: usize, z: usize) -> BlockType {
         let idx = Self::index(x, y, z); // groß geschrieben, da eine Funktion von self
         self.blocks[idx]
     }
-    fn set_block(&mut self, x: usize, y: usize, z: usize, block: BlockType) {
+    pub fn set_block(&mut self, x: usize, y: usize, z: usize, block: BlockType) {
         let idx = Self::index(x, y, z);
         self.blocks[idx] = block;
     }
-    fn is_solid(&self, x: i32, y: i32, z: i32 ) -> bool {
+    pub fn is_solid(&self, x: i32, y: i32, z: i32 ) -> bool {
         if x >= CHUNK_WIDTH as i32 || x < 0 || 
             y >= CHUNK_HEIGHT as i32 || y < 0 || 
             z >= CHUNK_WIDTH as i32 || z < 0 { // Chunk grenzen erkennen. Wenn nicht mehr in Chunk erstmal als "leer"
@@ -158,6 +134,7 @@ fn add_cube_faces(
     let color = match block_type {
         BlockType::Grass => [0.3, 0.8, 0.3, 1.0],
         BlockType::Stone => [1.0, 1., 1., 1.0],
+        BlockType::Wood => [0.6, 0.4, 0.2, 1.0],
         BlockType::Air => [1.0, 1.0, 1.0, 1.0],
     };
     
@@ -321,160 +298,5 @@ fn add_cube_faces(
             start, start+1, start+3,
             start+1, start+2, start+3,
         ]);
-    }
-}
-
-impl ChunkManager {
-    pub fn new() -> Self {
-        Self {
-            chunks: HashMap::new(),
-            noise: Perlin::new(12345)
-        }
-    }
-    pub fn spawn_chunk(
-        &mut self,
-        pos: IVec2,
-        commands: &mut Commands,           // Zum Entities erstellen
-        meshes: &mut ResMut<Assets<Mesh>>, // Zum Mesh speichern
-        materials: &mut ResMut<Assets<StandardMaterial>>, // Zum Material speichern
-    ) {
-        if self.chunks.contains_key(&pos) { // wenn der Chunk bereits existiert, dann fertig
-            return
-        }
-
-        let chunk = Chunk::new(pos, &self.noise);
-        let mesh = chunk.build_mesh();
-
-        // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
-
-        let entity = commands.spawn((
-            Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::WHITE,
-                cull_mode: None,  // <- Das ist wichtig!
-                ..default()
-            })),
-            Transform::from_xyz(
-                pos.x as f32 * CHUNK_WIDTH as f32,
-                0.0,
-                pos.y as f32 * CHUNK_WIDTH as f32
-            ),
-            chunk,
-        )).id();
-        self.chunks.insert(pos, entity);
-    }
-
-    pub fn get_world_block(&self, world_pos: Vec3, chunk_query: &Query<&Chunk>) -> Option<BlockType> { // da möglicherweise der Block nicht geladen ist etc
-        let chunk_pos = IVec2::new(
-            (world_pos.x / CHUNK_WIDTH as f32).floor() as i32,
-            (world_pos.z / CHUNK_WIDTH as f32).floor() as i32,
-        );
-        let local_x = world_pos.x.rem_euclid(CHUNK_WIDTH as f32) as usize; // rem_euclid ist ähnlich wie %, funktioniert mit neg Zahlen
-        let local_y = world_pos.y as usize;
-        let local_z = world_pos.z.rem_euclid(CHUNK_WIDTH as f32) as usize;
-
-        let entity = *self.chunks.get(&chunk_pos)?; // da habe ich keine ahnung was das alles macht. mit * wert der poiters entnommen
-        let chunk = chunk_query.get(entity).ok()?;
-        
-        Some(chunk.get_block(local_x, local_y, local_z))
-    }
-
-    pub fn get_world_block_mut(&self, world_pos: Vec3, chunk_query: &Query<(&mut Chunk, &Mesh3d)>) -> Option<BlockType> { // da möglicherweise der Block nicht geladen ist etc
-        let chunk_pos = IVec2::new(
-            (world_pos.x / CHUNK_WIDTH as f32).floor() as i32,
-            (world_pos.z / CHUNK_WIDTH as f32).floor() as i32,
-        );
-        let local_x = world_pos.x.rem_euclid(CHUNK_WIDTH as f32) as usize; // rem_euclid ist ähnlich wie %, funktioniert mit neg Zahlen
-        let local_y = world_pos.y as usize;
-        let local_z = world_pos.z.rem_euclid(CHUNK_WIDTH as f32) as usize;
-
-        let entity = *self.chunks.get(&chunk_pos)?; // da habe ich keine ahnung was das alles macht. mit * wert der poiters entnommen
-        let (chunk, _) = chunk_query.get(entity).ok()?;
-        
-        Some(chunk.get_block(local_x, local_y, local_z))
-    }
-    pub fn set_world_block(
-        &mut self,
-        world_pos: Vec3,
-        block_type: BlockType,
-        chunk_query: &mut Query<(&mut Chunk, &Mesh3d)>,
-        meshes: &mut ResMut<Assets<Mesh>>
-    ) {
-        let chunk_pos = IVec2::new(
-            (world_pos.x / CHUNK_WIDTH as f32).floor() as i32,
-            (world_pos.z / CHUNK_WIDTH as f32).floor() as i32,
-        );
-        let local_x = world_pos.x.rem_euclid(CHUNK_WIDTH as f32) as usize; // rem_euclid ist ähnlich wie %, funktioniert mit neg Zahlen
-        let local_y = world_pos.y as usize;
-        let local_z = world_pos.z.rem_euclid(CHUNK_WIDTH as f32) as usize;
-
-        let Some(&entity) = self.chunks.get(&chunk_pos) else {
-            return
-        };
-
-        let Ok((mut chunk, mesh_handle)) = chunk_query.get_mut(entity) else {
-            return
-        };
-
-        chunk.set_block(local_x, local_y, local_z, block_type);
-
-        let new_mesh = chunk.build_mesh();
-
-        if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
-            *mesh_asset = new_mesh;
-        }
-    }
-}
-
-pub fn update_chunks(
-    mut chunk_manager: ResMut<ChunkManager>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    camera_query: Query<&Transform, With<Camera>>,
-) {
-    let Ok(camera_transform) = camera_query.single() else {
-        return;
-    };
-    // Camera position in chunk cords umrechnen
-    let camera_chunk = IVec2::new(
-        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
-        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
-    );
-
-    for x in -RENDER_DISTACE..RENDER_DISTACE {
-        for z in -RENDER_DISTACE..RENDER_DISTACE {
-            let chunk_pos = camera_chunk + ivec2(x, z);
-            chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
-        }
-    }
-    despawn_chunks(camera_query, chunk_manager, commands);
-}
-
-pub fn despawn_chunks(
-    camera_query: Query<&Transform, With<Camera>>,
-    mut chunk_manager: ResMut<ChunkManager>,
-    mut commands: Commands
-) {
-    let mut to_remove = Vec::new();
-    let Ok(camera_transform) = camera_query.single() else {
-        return;
-    };
-    
-    let camera_chunk = IVec2::new(
-        (camera_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
-        (camera_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
-    );
-    for chunk in &chunk_manager.chunks {
-        let chunk_pos = chunk.0;
-        if (chunk_pos.x - camera_chunk.x).abs() > RENDER_DISTACE + 2 
-            || (chunk_pos.y - camera_chunk.y).abs() > RENDER_DISTACE + 2 { // +2 für einen buffer, falls bewegung zwischen chunks
-            to_remove.push(*chunk_pos); // da chunk.0 keine referenz ist
-        }
-    }
-    for pos in to_remove {
-        if let Some(entity) = chunk_manager.chunks.remove(&pos) {
-            commands.entity(entity).despawn();
-        }
     }
 }

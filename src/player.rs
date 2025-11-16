@@ -1,6 +1,7 @@
-use bevy::{prelude::*, state::commands};
+use bevy::prelude::*;
 use crate::camera::FpsCamera;
-use crate::chunk::{BlockType, CHUNK_WIDTH, Chunk, ChunkManager};
+use crate::chunk::{BlockType, Chunk};
+use crate::chunk_manager::ChunkManager;
 
 #[derive(Component)]
 pub struct Player {
@@ -124,7 +125,7 @@ pub fn player_mine_place(
         let ray_start = camera_tranform.translation();
         let ray_dir = camera_tranform.forward();
 
-        let max_dist = 5.0;
+        let max_dist = 10.0;
         let step_size = 0.05;
         let start_offset = 0.5;
 
@@ -151,7 +152,9 @@ pub fn player_mine_place(
                     );
                     break;
                 }
-                None => {}
+                None => {
+                    return;
+                }
             }
         }
     }
@@ -163,16 +166,16 @@ pub fn player_mine_place(
         let ray_start = camera_tranform.translation();
         let ray_dir = camera_tranform.forward();
 
-        let max_dist = 5.0;
+        let max_dist = 10.0;
         let step_size = 0.01;
 
         for i in 0..((max_dist / step_size) as i32) { // jeder block auf dem weg wird gechekct
             let current_pos = ray_start + ray_dir * (i as f32 * step_size); // Cool. 
             
             let block_pos = Vec3::new(
-                current_pos.x.floor() + 0.5,
-                current_pos.y.floor() + 0.5,
-                current_pos.z.floor() + 0.5,
+                current_pos.x.floor(),
+                current_pos.y.floor(),
+                current_pos.z.floor(),
             );
             // Ist hier ein Block?
             match chunk_manager.get_world_block_mut(block_pos, &mut chunk_query) {
