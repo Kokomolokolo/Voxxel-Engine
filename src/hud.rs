@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::player::Player;
+
 // Component für den HUD-Text
 #[derive(Component)]
 struct HudText;
@@ -72,13 +74,13 @@ fn update_fps(
 fn update_hud(
     fps_counter: Res<FpsCounter>,
     mut query: Query<&mut Text, With<HudText>>,
-    camera_query: Query<&Transform, With<Camera3d>>,
+    camera_query: Query<&GlobalTransform, With<Camera3d>>,
 ) {
     if let Ok(mut text) = query.single_mut() {
         // Kamera-Position holen
         let pos = camera_query
             .single()
-            .map(|t| t.translation)
+            .map(|t| t.translation())
             .unwrap_or(Vec3::ZERO);
         
         // Text updaten

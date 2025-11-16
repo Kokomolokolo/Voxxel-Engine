@@ -9,7 +9,8 @@ use chunk::*;
 use hud::*;
 use player::*;
 use bevy::prelude::*;
-
+// TODO / BUGS
+// Wenn ein in der luft schwebendes teil mit nichts verbunden ist verschidet es(vorallem bei chunk grenzen)
 
 fn main() {
     #[cfg(target_arch = "wasm32")]
@@ -34,10 +35,20 @@ fn main() {
         .add_plugins(HudPlugin)
         .add_systems(Startup, (
             setup,
-            setup_camera
+            setup_camera,
+            setup_player,
         ))
         .add_systems(Update, 
-            (camera_movment, camera_look, exit_on_esc, update_chunks, lock_cursor_on_click))
+            (
+                camera_look,
+                exit_on_esc, 
+                update_chunks, 
+                lock_cursor_on_click,
+                // camera_follow_player,
+                player_movement,
+                // player_physics,
+                player_mine_place,
+            ))
         .run();
 }
 
@@ -61,6 +72,9 @@ fn setup(
             0.0
         )),
     ));
+    // Himmel
+    commands.insert_resource(ClearColor(Color::srgb(0.53, 0.81, 0.92))); // Hellblau
+
 
 
     // commands.spawn((
