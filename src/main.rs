@@ -20,7 +20,8 @@ fn main() {
     #[cfg(target_arch = "wasm32")]
     let window = Window {
         canvas: Some("#glcanvas".to_string()),
-        fit_canvas_to_parent: true,
+        resolution: (1200., 800.).into(),
+        // fit_canvas_to_parent: true,
         ..default()
     };
     
@@ -50,7 +51,7 @@ fn main() {
                 lock_cursor_on_click,
                 // camera_follow_player,
                 player_movement,
-                // player_physics,
+                player_physics,
                 player_mine_place,
             ))
         .run();
@@ -76,6 +77,11 @@ fn setup(
             0.0
         )),
     ));
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 100.0, 
+        ..default()
+    });
     // Himmel
     commands.insert_resource(ClearColor(Color::srgb(0.53, 0.81, 0.92))); // Hellblau
 

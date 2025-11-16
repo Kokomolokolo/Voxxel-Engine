@@ -7,6 +7,7 @@ use crate::chunk_manager::ChunkManager;
 pub struct Player {
     pub velocity: Vec3,
     pub grounded: bool,
+    pub flight: bool,
 }
 
 pub fn setup_player(
@@ -16,6 +17,7 @@ pub fn setup_player(
         Player {
             velocity: Vec3::ZERO,
             grounded: false,
+            flight: true,
         },
         Transform::from_xyz(0.5, 40.0, 0.5)
     ))
@@ -60,26 +62,44 @@ pub fn player_movement(
         direction += *right;
     }
     // Y Richtung auf 0: Sonst beim schauen nach oben fliegend
-    // direction.y = 0.0; wieder rein sofern der spieler nicht fliegen können soll
+    if !player.flight { 
+        direction.y = 0.0;
+    }
     // Damit diagonale Bewegung nicht schneller ist:
     if direction.length() > 0.0 {
         direction = direction.normalize();
     }
 
     // Springen:
-    if keys.pressed(KeyCode::Space) {
-        direction.y += 2.0; 
+    if keys.pressed(KeyCode::Space) && player.flight {
+        direction.y += 3.0; 
     }
-    if keys.pressed(KeyCode::ShiftLeft) {
+    if keys.just_pressed(KeyCode::Space) && !player.flight && player.grounded {
+        player.velocity.y = 10.0; 
+    }
+    if keys.pressed(KeyCode::ShiftLeft) && player.flight {
         direction.y -= 2.0; 
     }
-    
-    let speed = 10.0;
-    player.velocity.x = direction.x * speed;
-    player.velocity.y = direction.y * speed;
-    player.velocity.z = direction.z * speed;
+    // Flight toggeln
+    if keys.just_pressed(KeyCode::KeyF) {
+        player.flight = !player.flight;
+        println!("Flight toggeled")
+    }
+    println!("{}", player.flight);
+    let speed = if player.flight {
+        10.0
+    } else {
+        4.0
+    };
+    if player.flight {
+        player.velocity = direction * speed;
+    } else {
+        player.velocity.x = direction.x * speed;
+        player.velocity.z = direction.z * speed;
+        // velocity.y wird von physics/gravity gesteuert!
+    }
 
-    player_transform.translation += player.velocity * time.delta_secs();
+    // player_transform.translation += player.velocity * time.delta_secs();
 }
 
 pub fn player_physics(
@@ -92,9 +112,16 @@ pub fn player_physics(
         return;
     };
     
-    // Gravität
-    player.velocity.y -= 9.81 * time.delta_secs();
+    // Gravität nur wenn nicht im Flugmodus
+    if !player.flight {
+        player.velocity.y -= 20.0 * time.delta_secs();
+    }
     
+    // Wenn FLight: Dann keine Kollison
+    if player.flight {
+        transform.translation += player.velocity * time.delta_secs();
+        return;
+    }
     // X-Achse separat
     transform.translation.x += player.velocity.x * time.delta_secs();
     resolve_collision_x(&mut transform, &mut player, &chunk_manager, &chunk_query);
@@ -229,7 +256,7 @@ fn resolve_collision_x(
     chunk_manager: &ChunkManager,
     chunk_query: &Query<&Chunk>,
 ) {
-    let player_half_size = Vec3::new(0.4, 0.9, 0.4);
+    let player_half_size = Vec3::new(0.2, 0.6, 0.2);
     
     // ✅ Erst hier berechnen für die Schleifengrenzen
     let player_min_initial = transform.translation - player_half_size;
@@ -277,7 +304,7 @@ fn resolve_collision_y(
     chunk_manager: &ChunkManager,
     chunk_query: &Query<&Chunk>,
 ) {
-    let player_half_size = Vec3::new(0.4, 0.9, 0.4);
+    let player_half_size = Vec3::new(0.2, 0.6, 0.2);
     
     let player_min_initial = transform.translation - player_half_size;
     let player_max_initial = transform.translation + player_half_size;
@@ -328,7 +355,7 @@ fn resolve_collision_z(
     chunk_manager: &ChunkManager,
     chunk_query: &Query<&Chunk>,
 ) {
-    let player_half_size = Vec3::new(0.4, 0.9, 0.4);
+    let player_half_size = Vec3::new(0.2, 0.6, 0.2);
     let player_min_initial = transform.translation - player_half_size;
     let player_max_initial = transform.translation + player_half_size;
     
