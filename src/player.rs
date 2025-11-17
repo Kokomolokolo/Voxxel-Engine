@@ -87,7 +87,7 @@ pub fn player_movement(
     }
     println!("{}", player.flight);
     let speed = if player.flight {
-        10.0
+        20.0
     } else {
         4.0
     };

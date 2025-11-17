@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use noise::NoiseFn;
 
 use std::collections::HashMap;
 
@@ -127,6 +128,9 @@ impl ChunkManager {
         if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
             *mesh_asset = new_mesh;
         }
+    }
+    pub fn get_biom_at(&self, world_x: i32, world_z: i32) -> f64 {
+        self.generator.biom_noise.get([world_x as f64, world_z as f64])
     }
 }
 

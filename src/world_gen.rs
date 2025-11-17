@@ -6,7 +6,7 @@ use crate::chunk::{BlockType, CHUNK_WIDTH, CHUNK_HEIGHT, Chunk};
 pub struct WorldGenerator {
     tarrain_noise: Perlin,
     detail_noise: Perlin,
-    biom_noise: Fbm<Perlin>,
+    pub biom_noise: Fbm<Perlin>, // pub damit ich im HUD anzeigen kann, welches Biom
 }
 
 impl WorldGenerator {
@@ -32,15 +32,25 @@ impl WorldGenerator {
         let base_height = self.tarrain_noise.get([world_x as f64 * 0.03, world_z as f64 * 0.03]) * 10.0;
         // Kleinere Noise für Rauheiten
         let detail = self.detail_noise.get([world_x as f64 * 0.12, world_z as f64 * 0.12]).abs() * 3.0;
-
         let combined = base_height + detail ;
 
-        if biom_value > 0.5 {
+        if biom_value > 0.9 {
             // Ein leichtes Bergbiom
-            let dramatic = combined.abs().powf(1.3) * combined.signum(); 
+            let dramatic = combined.abs().powf(1.5) * combined.signum();
+            // Basis von 30
+            30 + dramatic as i32
+        } else if biom_value > 0.7 {
+            // Ein leichtes Bergbiom
+            let dramatic = combined.abs().powf(1.3) * combined.signum();
+            // Basis von 30
+            30 + dramatic as i32
+        } else if biom_value > 0.5 {
+            // Ein leichtes Bergbiom
+            let dramatic = combined.abs().powf(1.1) * combined.signum(); 
             // Basis von 30
             30 + dramatic as i32
         } else {
+            // Basis von 30
             30 + (combined * 0.3) as i32
         }
         
@@ -59,7 +69,7 @@ impl WorldGenerator {
         // Unter Terrain
         if world_y < height - 4 {
             BlockType::Stone
-        } else if world_y < height - 2 && world_y > height - 4 {
+        } else if world_y <= height - 2 && world_y >= height - 4 {
             BlockType::Dirt
         } else {
             if height <= 24 && height >= 20 {

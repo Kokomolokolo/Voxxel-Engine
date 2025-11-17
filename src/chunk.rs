@@ -5,11 +5,8 @@ use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 //use noise::{Fbm, Perlin};
 use crate::world_gen::*;
 
-use std::collections::HashMap;
-
-
 pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 64; // falls ich das später noch ändern will
+pub const CHUNK_HEIGHT: usize = 96; // falls ich das später noch ändern will
 
 
 #[derive(Component)]
