@@ -8,6 +8,7 @@ pub struct Player {
     pub velocity: Vec3,
     pub grounded: bool,
     pub flight: bool,
+    selected_block: BlockType,
 }
 
 pub fn setup_player(
@@ -18,6 +19,7 @@ pub fn setup_player(
             velocity: Vec3::ZERO,
             grounded: false,
             flight: true,
+            selected_block: BlockType::Grass,
         },
         Transform::from_xyz(0.5, 40.0, 0.5)
     ))
@@ -72,22 +74,23 @@ pub fn player_movement(
 
     // Springen:
     if keys.pressed(KeyCode::Space) && player.flight {
-        direction.y += 3.0; 
+        direction.y += 0.5; 
     }
     if keys.just_pressed(KeyCode::Space) && !player.flight && player.grounded {
         player.velocity.y = 10.0; 
     }
     if keys.pressed(KeyCode::ShiftLeft) && player.flight {
-        direction.y -= 2.0; 
+        direction.y -= 0.5; 
     }
     // Flight toggeln
     if keys.just_pressed(KeyCode::KeyF) {
         player.flight = !player.flight;
-        println!("Flight toggeled")
     }
-    println!("{}", player.flight);
     let speed = if player.flight {
-        20.0
+        // SUPERSPEEEEED mit P
+        if keys.pressed(KeyCode::KeyG) { 30.0 } else {
+            10.0
+        }
     } else {
         4.0
     };
@@ -101,7 +104,23 @@ pub fn player_movement(
 
     // player_transform.translation += player.velocity * time.delta_secs();
 }
+pub fn player_block_selection(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut player_query: Query<&mut Player>,
+) {
+    let Ok(mut player) = player_query.single_mut() else {
+        return
+    };
+    if keys.just_pressed(KeyCode::Digit1) { player.selected_block = BlockType::Grass }
+    if keys.just_pressed(KeyCode::Digit2) { player.selected_block = BlockType::Dirt }
+    if keys.just_pressed(KeyCode::Digit3) { player.selected_block = BlockType::Stone }
+    if keys.just_pressed(KeyCode::Digit4) { player.selected_block = BlockType::Sand }
+    if keys.just_pressed(KeyCode::Digit5) { player.selected_block = BlockType::Wood }
+    if keys.just_pressed(KeyCode::Digit6) { player.selected_block = BlockType::Water }
+    if keys.just_pressed(KeyCode::Digit7) { player.selected_block = BlockType::Leaves }
 
+
+}
 pub fn player_physics(
     mut player_query: Query<(&mut Player, &mut Transform)>,
     chunk_manager: Res<ChunkManager>,
@@ -141,8 +160,12 @@ pub fn player_mine_place(
     mut chunk_manager: ResMut<ChunkManager>,
     mut chunk_query: Query<(&mut Chunk, &Mesh3d)>, // 2 verschiedne, damit alles mesh bezogene in chunks.rs bleibt
     mut meshes: ResMut<Assets<Mesh>>,
+    mut player_query: Query<&mut Player>
 ) {
     let Ok(camera_tranform) = camera_query.single() else {
+        return
+    };
+    let Ok(player) = player_query.single_mut() else {
         return
     };
 
@@ -185,6 +208,7 @@ pub fn player_mine_place(
             }
         }
     }
+    // Rechtsclick: Platzieren
     if mouse.just_pressed(MouseButton::Right) {
         // Block wird platziert
         let mut last_air_block: Option<Vec3> = None;
@@ -223,7 +247,7 @@ pub fn player_mine_place(
             match last_air_block {
                 Some(air_pos) => {
                     chunk_manager.set_world_block(air_pos, 
-                        BlockType::Grass, 
+                        player.selected_block, 
                         &mut chunk_query, 
                         &mut meshes
                     );
@@ -235,20 +259,7 @@ pub fn player_mine_place(
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Wie ich sie hasse.
 // Hilfsfunktion für X-Kollision
 fn resolve_collision_x(
     transform: &mut Transform,

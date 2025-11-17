@@ -53,6 +53,7 @@ fn main() {
                 player_movement,
                 player_physics,
                 player_mine_place,
+                player_block_selection,
             ))
         .run();
 }
