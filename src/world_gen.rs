@@ -1,18 +1,22 @@
 use bevy::prelude::*;
-use noise::{NoiseFn, Perlin};
+use noise::{NoiseFn, Perlin, Fbm, MultiFractal};
 
 use crate::chunk::{BlockType, CHUNK_WIDTH, CHUNK_HEIGHT, Chunk};
 
 pub struct WorldGenerator {
     tarrain_noise: Perlin,
-    detail_noise: Perlin
+    detail_noise: Perlin,
+    biom_noise: Fbm<Perlin>,
 }
 
 impl WorldGenerator {
     pub fn new(seed: u32, seed2: u32) -> Self {
         Self {
             tarrain_noise: Perlin::new(seed),
-            detail_noise: Perlin::new(seed2)
+            detail_noise: Perlin::new(seed2),
+            biom_noise: Fbm::<Perlin>::new(seed + 200)
+                .set_octaves(1)           // Je geringer dest glatter
+                .set_frequency(0.0015),   
         }
     }
     // pub fn get_height_v1(&self, world_x: i32, world_z: i32) -> i32 {
@@ -22,16 +26,24 @@ impl WorldGenerator {
     //     base_height + (noise_value / 2.0 * 30.0) as i32
     // }
     pub fn get_height(&self, world_x: i32, world_z: i32) -> i32 {
+        // Biom Wert
+        let biom_value = self.biom_noise.get([world_x as f64, world_z as f64]);
         // Basis-Hügel (große Formen)
         let base_height = self.tarrain_noise.get([world_x as f64 * 0.03, world_z as f64 * 0.03]) * 10.0;
-        
         // Kleinere Noise für Rauheiten
         let detail = self.detail_noise.get([world_x as f64 * 0.12, world_z as f64 * 0.12]).abs() * 3.0;
 
         let combined = base_height + detail ;
-        let dramatic = combined.abs().powf(1.3) * combined.signum(); 
-        // Basis von 30
-        30 + dramatic as i32
+
+        if biom_value > 0.5 {
+            // Ein leichtes Bergbiom
+            let dramatic = combined.abs().powf(1.3) * combined.signum(); 
+            // Basis von 30
+            30 + dramatic as i32
+        } else {
+            30 + (combined * 0.3) as i32
+        }
+        
     }
 
     pub fn get_block_at(&self, world_x: i32, world_y: i32, world_z: i32, ) -> BlockType {
