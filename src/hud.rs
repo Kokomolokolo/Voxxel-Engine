@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{chunk_manager::{self, ChunkManager}, player::Player};
+use crate::chunk_manager::ChunkManager;
 
 // Component für den HUD-Text
 #[derive(Component)]
