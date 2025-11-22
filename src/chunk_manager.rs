@@ -31,12 +31,23 @@ impl ChunkManager {
         commands: &mut Commands,           // Zum Entities erstellen
         meshes: &mut ResMut<Assets<Mesh>>, // Zum Mesh speichern
         materials: &mut ResMut<Assets<StandardMaterial>>, // Zum Material speichern
+        //chunk_query: &Query<&Chunk>,
     ) {
         if self.chunks.contains_key(&pos) { // wenn der Chunk bereits existiert, dann fertig
             return
         }
 
         let chunk = Chunk::new(pos, &self.generator);
+        // Nachbarn sammeln - erstmal raus da ich das gesammte mesh oft neu bauen müsste, habe da keine Lust drauf
+        // let mut neighbors: HashMap<IVec2, &Chunk> = HashMap::new();
+        // for offset in [IVec2::new(-1, 0), IVec2::new(1, 0), IVec2::new(0, -1), IVec2::new(0, 1)] {
+        //     let neighbor_pos = pos + offset;
+        //     if let Some(&entity) = self.chunks.get(&neighbor_pos) {
+        //         if let Ok(neighbor_chunk) = chunk_query.get(entity) {
+        //             neighbors.insert(neighbor_pos, neighbor_chunk);
+        //         }
+        //     }
+        // }
         let mesh = chunk.build_mesh();
 
         // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
@@ -150,13 +161,18 @@ pub fn update_chunks(
         (player_transform.translation.x / CHUNK_WIDTH as f32).floor() as i32,
         (player_transform.translation.z / CHUNK_WIDTH as f32).floor() as i32,
     );
-
+    let mut spawned_this_frame = 0;
+    const MAX_SPAWNS_PER_FRAME: i32 = 2;
     for x in -RENDER_DISTACE..RENDER_DISTACE {
         for z in -RENDER_DISTACE..RENDER_DISTACE {
+            if spawned_this_frame > MAX_SPAWNS_PER_FRAME {
+                return;
+            }
             let chunk_pos = camera_chunk + ivec2(x, z);
             if !chunk_manager.chunks.contains_key(&chunk_pos) {
+                chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
+                spawned_this_frame += 1;
             }
-            chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
         }
     }
     despawn_chunks(player_query, chunk_manager, commands);

@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
+use std::collections::HashMap;
 
 //use noise::{Fbm, Perlin};
 use crate::world_gen::*;
 
 pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 96; // falls ich das später noch ändern will
+pub const CHUNK_HEIGHT: usize = 128; // falls ich das später noch ändern will
 
 
 #[derive(Component)]
@@ -68,19 +69,36 @@ impl Chunk {
             return true
         }
     }
+    
     // Über chunkgrenzen hinaus checken. Habe darauf aber gerade keine Lust mehr.
-    // pub fn is_solid_global(&self, 
-    // x: i32, 
-    // y: i32, 
-    // z: i32,
-    // neighbors: &HashMap<IVec2, &Chunk>  // Alle Nachbar-Chunks
-    // ) -> bool{
-    //     if x >= 0 && x < CHUNK_WIDTH as i32 && 
-    //         z >= 0 && z < CHUNK_WIDTH as i32 &&
-    //         y >= 0 && y < CHUNK_HEIGHT as i32 {
-    //             return self.is_solid(x, y, z);  // Normal checken
-    //         }
-    // }
+    pub fn is_solid_global(&self, 
+        x: i32, 
+        y: i32, 
+        z: i32,
+        neighbors: &HashMap<IVec2, &Chunk>  // Alle Nachbar-Chunks
+    ) -> bool {
+        // wenn y außerhalb: Keine Nachbarn noch oben oder unten
+        if y < 0 || y >= CHUNK_HEIGHT as i32 {
+            return false;
+        }
+        // Innerhalb dieses Chunks?
+        if x >= 0 && x < CHUNK_WIDTH as i32 && z >= 0 && z < CHUNK_WIDTH as i32 {
+            return self.is_solid(x, y, z);
+        }
+        let chunk_offset = IVec2::new(
+            x.div_euclid(CHUNK_WIDTH as i32), 
+            z.div_euclid(CHUNK_WIDTH as i32)
+        );
+        let local_x = x.rem_euclid(CHUNK_WIDTH as i32);
+        let local_z = z.rem_euclid(CHUNK_WIDTH as i32);
+        let neighbor_pos = self.pos + chunk_offset;
+        if let Some(neighbor) = neighbors.get(&neighbor_pos) {
+            neighbor.is_solid(local_x, y, local_z)
+        } else {
+            // Chunk nicht geladen -> als solid behandeln (keine Fläche rendern)
+            true
+        }
+    }
     pub fn build_mesh(&self) -> Mesh {
         // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
         // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
