@@ -7,9 +7,9 @@ use crate::chunk::*;
 use crate::world_gen::*;
 
 #[cfg(target_arch = "wasm32")]
-const RENDER_DISTACE: i32 = 6;
+pub const RENDER_DISTACE: i32 = 6;
 #[cfg(not(target_arch = "wasm32"))]
-const RENDER_DISTACE: i32 = 12;
+pub const RENDER_DISTACE: i32 = 12;
 
 #[derive(Resource)]
 pub struct ChunkManager {
@@ -163,8 +163,8 @@ pub fn update_chunks(
     );
     let mut spawned_this_frame = 0;
     const MAX_SPAWNS_PER_FRAME: i32 = 2;
-    for x in -RENDER_DISTACE..RENDER_DISTACE {
-        for z in -RENDER_DISTACE..RENDER_DISTACE {
+    for x in -RENDER_DISTACE..=RENDER_DISTACE {
+        for z in -RENDER_DISTACE..=RENDER_DISTACE {
             if spawned_this_frame > MAX_SPAWNS_PER_FRAME {
                 return;
             }

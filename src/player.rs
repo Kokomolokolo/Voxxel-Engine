@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::camera::FpsCamera;
-use crate::chunk::{BlockType, Chunk};
-use crate::chunk_manager::ChunkManager;
+use crate::chunk::{BlockType, Chunk, CHUNK_WIDTH};
+use crate::chunk_manager::{ChunkManager, RENDER_DISTACE};
 
 #[derive(Component)]
 pub struct Player {
@@ -13,6 +13,8 @@ pub struct Player {
 
 pub fn setup_player(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
         Player {
@@ -21,7 +23,15 @@ pub fn setup_player(
             flight: true,
             selected_block: BlockType::Grass,
         },
-        Transform::from_xyz(0.5, 40.0, 0.5)
+        Transform::from_xyz(0.5, 40.0, 0.5),
+        Visibility::default(),
+        InheritedVisibility::default(),
+        //Mesh3d(meshes.add(Sphere::new(0.5))),  // Debug-Sphere
+        // MeshMaterial3d(materials.add(StandardMaterial {
+        //     base_color: Color::srgb(1.0, 0.0, 0.0),  // Rot
+        //     unlit: true,  // Immer sichtbar
+        //     ..default()
+        // })),
     ))
     .with_children(|parent| {
         parent.spawn((
@@ -29,6 +39,14 @@ pub fn setup_player(
             // Kamera relativ zum Spieler positionieren (z.B. Augenhöhe)
             Transform::from_xyz(0.0, 1.6, 0.0),
             FpsCamera::new(),
+            DistanceFog {
+                color: Color::srgb(0.8, 0.9, 1.0),
+                falloff: FogFalloff::Linear {
+                    start: (RENDER_DISTACE as f32 - 0.5) * CHUNK_WIDTH as f32,
+                    end: (RENDER_DISTACE as f32 + 3.0) * CHUNK_WIDTH as f32,
+                },
+                ..default()
+            },
         ));
     });
 }
@@ -287,8 +305,8 @@ fn resolve_collision_x(
                 
                 if let Some(block_type) = chunk_manager.get_world_block(block_pos, chunk_query) {
                     if block_type != BlockType::Air {
-                        let block_min = block_pos - Vec3::splat(0.5);
-                        let block_max = block_pos + Vec3::splat(0.5);
+                        let block_min = block_pos;
+                        let block_max = block_pos + Vec3::ONE;
                         
                         // Kollisions-Check
                         if player_max.x > block_min.x && player_min.x < block_max.x &&
@@ -336,8 +354,8 @@ fn resolve_collision_y(
                 
                 if let Some(block_type) = chunk_manager.get_world_block(block_pos, chunk_query) {
                     if block_type != BlockType::Air {
-                        let block_min = block_pos - Vec3::splat(0.5);
-                        let block_max = block_pos + Vec3::splat(0.5);
+                        let block_min = block_pos;
+                        let block_max = block_pos + Vec3::ONE;
                         
                         if player_max.x > block_min.x && player_min.x < block_max.x &&
                            player_max.y > block_min.y && player_min.y < block_max.y &&
@@ -382,8 +400,8 @@ fn resolve_collision_z(
                 let player_max = transform.translation + player_half_size;
                 if let Some(block_type) = chunk_manager.get_world_block(block_pos, chunk_query) {
                     if block_type != BlockType::Air {
-                        let block_min = block_pos - Vec3::splat(0.5);
-                        let block_max = block_pos + Vec3::splat(0.5);
+                        let block_min = block_pos;
+                        let block_max = block_pos + Vec3::ONE;
                         
                         if player_max.x > block_min.x && player_min.x < block_max.x &&
                            player_max.y > block_min.y && player_min.y < block_max.y &&
