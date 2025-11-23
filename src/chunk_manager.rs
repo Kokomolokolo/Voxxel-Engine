@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use noise::NoiseFn;
+use rand::Rng;
 
 use std::collections::HashMap;
 
@@ -29,9 +30,11 @@ pub struct ChunkManager {
 
 impl ChunkManager {
     pub fn new() -> Self {
+        let mut rng = rand::rng();
+        let seed: u32 = rng.random_range(0..1000);
         Self {
             chunks: HashMap::new(),
-            generator: WorldGenerator::new(12345, 676767)
+            generator: WorldGenerator::new(seed, seed + 100)
         }
     }
     pub fn spawn_chunk(
@@ -65,7 +68,7 @@ impl ChunkManager {
             Mesh3d(meshes.add(mesh)),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: Color::WHITE,
-                cull_mode: None,  // <- Das ist wichtig!
+                // alpha_mode: AlphaMode::Blend, für durchsichtiges Wasser oder Blätter, erst nach Texture Update
                 ..default()
             })),
             Transform::from_xyz(
@@ -150,7 +153,7 @@ impl ChunkManager {
         }
     }
     pub fn get_biom_at(&self, world_x: i32, world_z: i32) -> f64 {
-        self.generator.biom_noise.get([world_x as f64, world_z as f64])
+        self.generator.biom_noise.get([world_x as f64 * 1.5, world_z as f64 * 1.5])
     }
 }
 

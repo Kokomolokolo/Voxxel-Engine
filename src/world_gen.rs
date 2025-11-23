@@ -28,19 +28,19 @@ impl WorldGenerator {
     //     base_height + (noise_value / 2.0 * 30.0) as i32
     // }
     pub fn get_height(&self, world_x: i32, world_z: i32) -> i32 {
-        const SPIKY_MOUNTAINS: f64 = 0.95;
-        const MOUNTAIN_HIGH: f64 = 0.7;
-        const MOUNTAIN_MID: f64 = 0.5;
+        const SPIKY_MOUNTAINS: f64 = 0.8;
+        const MOUNTAIN_HIGH: f64 = 0.5;
+        const MOUNTAIN_MID: f64 = 0.3;
         const HILLS: f64 = -0.5;
         // Darunter: Flachland; Vielleicht eine Waldregion?
 
         // Biom Wert
-        let biom_value = self.biom_noise.get([world_x as f64, world_z as f64]);     
+        let biom_value = self.biom_noise.get([world_x as f64 * 3.0, world_z as f64 * 3.0]);     
 
         // Basis-Hügel (große Formen)
         let base_height = self.tarrain_noise.get([
-            world_x as f64 * 0.03, 
-            world_z as f64 * 0.03
+            world_x as f64 * 0.01, 
+            world_z as f64 * 0.01
         ]) * 10.0;
 
         // Kleinere Noise für Rauheiten
@@ -57,8 +57,8 @@ impl WorldGenerator {
         } else {
             base_height + detail.abs() * 3.0
         };
-        let spiky_mountains = combined.abs().powf(1.2) * combined.signum();
-        let mountain_high = combined.abs().powf(1.5) * combined.signum();
+        let spiky_mountains = combined.abs().powf(1.3) * combined.signum();
+        let mountain_high = combined.abs().powf(1.4) * combined.signum();
         let mountain_mid = combined.abs().powf(1.3) * combined.signum();
         let hills = combined.abs().powf(1.1) * combined.signum();
         let flat = combined * 0.3;
@@ -77,7 +77,7 @@ impl WorldGenerator {
             self.lerp(hills, mountain_mid, t)
         } else {
             // Übergang zwischen Flachland und Hügeln
-            let t = ((biom_value + 1.0) / 1.5).max(0.0); // Normalisiere auf 0-1
+            let t = ((biom_value + 1.0) / (HILLS + 1.0)).clamp(0.0, 1.0); // Normalisiere auf 0-1
             self.lerp(flat, hills, t)
         };
         // Die Finale Höhe mit einer Basis von 30

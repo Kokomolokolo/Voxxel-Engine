@@ -174,165 +174,105 @@ fn add_cube_faces(
         BlockType::Sand => [0.9, 0.8, 0.6, 1.0],
     };
     
-    // Top face (+y)
+    // Top face (+y) - von oben betrachtet gegen Uhrzeigersinn
     if render_top {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y + 1.0, pos.z],
-            [pos.x + 1.0, pos.y + 1.0, pos.z],
-            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0],
-            [pos.x, pos.y + 1.0, pos.z + 1.0],
+            [pos.x, pos.y + 1.0, pos.z],           // 0
+            [pos.x, pos.y + 1.0, pos.z + 1.0],     // 1
+            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0], // 2
+            [pos.x + 1.0, pos.y + 1.0, pos.z],     // 3
         ]);
-        normals.extend_from_slice(&[
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+3, start+1,
-            start+1, start+3, start+2,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
     
-    // Bottom face (-y)
+    // Bottom face (-y) - von unten betrachtet gegen Uhrzeigersinn
     if render_bottom {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y, pos.z],
-            [pos.x + 1.0, pos.y, pos.z],
-            [pos.x + 1.0, pos.y, pos.z + 1.0],
-            [pos.x, pos.y, pos.z + 1.0],
+            [pos.x, pos.y, pos.z],                 // 0
+            [pos.x + 1.0, pos.y, pos.z],           // 1
+            [pos.x + 1.0, pos.y, pos.z + 1.0],     // 2
+            [pos.x, pos.y, pos.z + 1.0],           // 3
         ]);
-        normals.extend_from_slice(&[
-            [0.0, -1.0, 0.0],
-            [0.0, -1.0, 0.0],
-            [0.0, -1.0, 0.0],
-            [0.0, -1.0, 0.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[0.0, -1.0, 0.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+1, start+3,
-            start+1, start+2, start+3,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
     
-    // Right face (+x)
+    // Right face (+x) - von rechts (außen) betrachtet gegen Uhrzeigersinn
     if render_right {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x + 1.0, pos.y, pos.z],
-            [pos.x + 1.0, pos.y, pos.z + 1.0],
-            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0],
-            [pos.x + 1.0, pos.y + 1.0, pos.z],
+            [pos.x + 1.0, pos.y, pos.z],           // 0
+            [pos.x + 1.0, pos.y + 1.0, pos.z],     // 1
+            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0], // 2
+            [pos.x + 1.0, pos.y, pos.z + 1.0],     // 3
         ]);
-        normals.extend_from_slice(&[
-            [1.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[1.0, 0.0, 0.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+1, start+3,
-            start+1, start+2, start+3,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
     
-    // Left face (-x)
+    // Left face (-x) - von links (außen) betrachtet gegen Uhrzeigersinn
     if render_left {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y, pos.z],
-            [pos.x, pos.y, pos.z + 1.0],
-            [pos.x, pos.y + 1.0, pos.z + 1.0],
-            [pos.x, pos.y + 1.0, pos.z],
+            [pos.x, pos.y, pos.z + 1.0],           // 0
+            [pos.x, pos.y + 1.0, pos.z + 1.0],     // 1
+            [pos.x, pos.y + 1.0, pos.z],           // 2
+            [pos.x, pos.y, pos.z],                 // 3
         ]);
-        normals.extend_from_slice(&[
-            [-1.0, 0.0, 0.0],
-            [-1.0, 0.0, 0.0],
-            [-1.0, 0.0, 0.0],
-            [-1.0, 0.0, 0.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[-1.0, 0.0, 0.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+1, start+3,
-            start+1, start+2, start+3,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
     
-    // Back face (+z)
+    // Back face (+z) - von hinten (außen) betrachtet gegen Uhrzeigersinn
     if render_back {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y, pos.z + 1.0],
-            [pos.x, pos.y + 1.0, pos.z + 1.0],
-            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0],
-            [pos.x + 1.0, pos.y, pos.z + 1.0],
+            [pos.x + 1.0, pos.y, pos.z + 1.0],     // 0
+            [pos.x + 1.0, pos.y + 1.0, pos.z + 1.0], // 1
+            [pos.x, pos.y + 1.0, pos.z + 1.0],     // 2
+            [pos.x, pos.y, pos.z + 1.0],           // 3
         ]);
-        normals.extend_from_slice(&[
-            [0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[0.0, 0.0, 1.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+1, start+3,
-            start+1, start+2, start+3,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
     
-    // Front face (-z)
+    // Front face (-z) - von vorne (außen) betrachtet gegen Uhrzeigersinn
     if render_front {
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y, pos.z],
-            [pos.x, pos.y + 1.0, pos.z],
-            [pos.x + 1.0, pos.y + 1.0, pos.z],
-            [pos.x + 1.0, pos.y, pos.z],
+            [pos.x, pos.y, pos.z],                 // 0
+            [pos.x, pos.y + 1.0, pos.z],           // 1
+            [pos.x + 1.0, pos.y + 1.0, pos.z],     // 2
+            [pos.x + 1.0, pos.y, pos.z],           // 3
         ]);
-        normals.extend_from_slice(&[
-            [0.0, 0.0, -1.0],
-            [0.0, 0.0, -1.0],
-            [0.0, 0.0, -1.0],
-            [0.0, 0.0, -1.0],
-        ]);
-        colors.extend_from_slice(&[
-            color,
-            color,
-            color,
-            color,
-        ]);
+        normals.extend_from_slice(&[[0.0, 0.0, -1.0]; 4]);
+        colors.extend_from_slice(&[color; 4]);
         indices.extend_from_slice(&[
-            start, start+1, start+3,
-            start+1, start+2, start+3,
+            start, start+1, start+2,
+            start, start+2, start+3,
         ]);
     }
 }
