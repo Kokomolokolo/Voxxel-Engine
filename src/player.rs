@@ -3,6 +3,20 @@ use crate::camera::FpsCamera;
 use crate::chunk::{BlockType, Chunk, CHUNK_WIDTH};
 use crate::chunk_manager::{ChunkManager, RENDER_DISTACE};
 
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, setup_player);
+        app.add_systems(Update, (
+            player_movement,
+            player_physics,
+            player_mine_place,
+            player_block_selection,
+        ));
+    }
+}
+
 #[derive(Component)]
 pub struct Player {
     pub velocity: Vec3,

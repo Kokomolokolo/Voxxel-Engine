@@ -9,7 +9,6 @@ use crate::world_gen::*;
 pub const CHUNK_WIDTH: usize = 16;
 pub const CHUNK_HEIGHT: usize = 128; // falls ich das später noch ändern will
 
-
 #[derive(Component)]
 pub struct Chunk {
     pos: IVec2,

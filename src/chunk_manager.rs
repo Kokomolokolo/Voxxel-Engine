@@ -5,6 +5,15 @@ use std::collections::HashMap;
 
 use crate::chunk::*;
 use crate::world_gen::*;
+use crate::player::Player;
+
+pub struct ChunkManagerPlugin;
+impl Plugin for ChunkManagerPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ChunkManager::new());
+        app.add_systems(Update, update_chunks);
+    }
+}
 
 #[cfg(target_arch = "wasm32")]
 pub const RENDER_DISTACE: i32 = 6;
@@ -145,7 +154,6 @@ impl ChunkManager {
     }
 }
 
-use crate::Player;
 pub fn update_chunks(
     mut chunk_manager: ResMut<ChunkManager>,
     mut commands: Commands,

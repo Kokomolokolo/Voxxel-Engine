@@ -6,11 +6,10 @@ mod player;
 mod chunk_manager;
 mod world_gen;
 
-use camera::*;
-use chunk::*;
-use chunk_manager::*;
-use hud::*;
-use player::*;
+use camera::CameraPlugin;
+use chunk_manager::ChunkManagerPlugin;
+use hud::HudPlugin;
+use player::PlayerPlugin;
 
 use bevy::prelude::*;
 // TODO / BUGS
@@ -36,33 +35,19 @@ fn main() {
             primary_window: Some(window),
             ..default()
         }))
-        .insert_resource(ChunkManager::new())
-        .add_plugins(HudPlugin)
-        .add_systems(Startup, (
-            setup,
-            setup_camera,
-            setup_player,
+        .add_plugins((
+            PlayerPlugin,
+            CameraPlugin,
+            ChunkManagerPlugin,
+            HudPlugin,
         ))
-        .add_systems(Update, 
-            (
-                camera_look,
-                exit_on_esc, 
-                update_chunks,
-                lock_cursor_on_click,
-                // camera_follow_player,
-                player_movement,
-                player_physics,
-                player_mine_place,
-                player_block_selection,
-            ))
+        .add_systems(Startup, setup,)
+        .add_systems(Update, exit_on_esc)
         .run();
 }
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut chunk_manager: ResMut<ChunkManager>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // light
     commands.spawn((
@@ -88,23 +73,7 @@ fn setup(
 
 
 
-    // commands.spawn((
-    //     Mesh3d(meshes.add(mesh)),
-    //     MeshMaterial3d(materials.add(StandardMaterial {
-    //         base_color: Color::WHITE,
-    //         cull_mode: None,  // <- Das ist wichtig!
-    //         ..default()
-    //     })),
-    //     Transform::default(),
-    // ));
-     // let my_mesh = create_cube_mesh(Vec3::ZERO);  // Deine Funktion
-    // let mesh_handle = meshes.add(my_mesh);  // In Assets einfügen
-    
-    // commands.spawn((
-    //     Mesh3d(mesh_handle),  // Mesh spawnen
-    //     MeshMaterial3d(materials.add(Color::srgb(0.8, 0.2, 0.2))),  // Material (Farbe)
-    //     Transform::from_xyz(0.0, 0.5, 0.0),  // Position
-    // ));
+
 }
 fn exit_on_esc(
     keys: Res<ButtonInput<KeyCode>>,
