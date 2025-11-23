@@ -27,8 +27,6 @@ pub struct Player {
 
 pub fn setup_player(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
         Player {
@@ -51,7 +49,7 @@ pub fn setup_player(
         parent.spawn((
             Camera3d::default(),
             // Kamera relativ zum Spieler positionieren (z.B. Augenhöhe)
-            Transform::from_xyz(0.0, 1.6, 0.0),
+            Transform::from_xyz(0.0, 1., 0.0),
             FpsCamera::new(),
             DistanceFog {
                 color: Color::srgb(0.8, 0.9, 1.0),

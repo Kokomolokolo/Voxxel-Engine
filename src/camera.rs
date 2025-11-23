@@ -14,10 +14,6 @@ impl Plugin for CameraPlugin {
     }
 }
 
-
-
-
-
 #[derive(Component)]
 pub struct FpsCamera {
     pub speed: f32,
@@ -35,7 +31,6 @@ impl FpsCamera {
 }
 
 pub fn setup_camera(
-    mut commands: Commands,
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
 ) {
     // Maus verstecken und einsperren
@@ -56,43 +51,6 @@ pub fn lock_cursor_on_click(
         }
     }
 }
-
-// pub fn camera_movment(
-//     key: Res<ButtonInput<KeyCode>>,
-//     time: Res<Time>,
-//     mut query: Query<(&mut Transform, &FpsCamera)>,
-// ) {
-//     for (mut transform, fps_cam) in query.iter_mut() {
-//         // ECS basiert, obwohl es nur eine Kamera gibt
-//         let mut velocity = Vec3::ZERO;
-
-//         let forward = transform.forward();
-//         let right = transform.right();
-
-//         if key.pressed(KeyCode::KeyW) {
-//             velocity += *forward;
-//         }
-//         if key.pressed(KeyCode::KeyA) {
-//             velocity -= *right;
-//         }
-//         if key.pressed(KeyCode::KeyD) {
-//             velocity += *right;
-//         }
-//         if key.pressed(KeyCode::KeyS) {
-//             velocity -= *forward;
-//         }
-
-//         // Space / Shift
-//         if key.pressed(KeyCode::Space) {
-//             velocity.y += 1.0;
-//         }
-//         if key.pressed(KeyCode::ShiftLeft) {
-//             velocity.y -= 1.0;
-//         }
-
-//         transform.translation += velocity * fps_cam.speed * time.delta_secs();
-//     }
-// }
 
 pub fn camera_look(
     mut mouse_motion: EventReader<MouseMotion>,

@@ -4,7 +4,8 @@ mod chunk;
 mod hud;
 mod player;
 mod chunk_manager;
-mod world_gen;
+//mod world_gen;
+mod world;
 
 use camera::CameraPlugin;
 use chunk_manager::ChunkManagerPlugin;
@@ -65,10 +66,10 @@ fn setup(
     ));
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 100.0, 
+        brightness: 900.0, 
         ..default()
     });
-    // Himmel
+    // // Himmel
     commands.insert_resource(ClearColor(Color::srgb(0.53, 0.81, 0.92))); // Hellblau
 
 

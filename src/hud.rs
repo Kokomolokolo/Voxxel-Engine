@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::chunk_manager::ChunkManager;
+use crate::{chunk_manager::ChunkManager, world::{Biome, WorldGenerator}};
 
 // Component für den HUD-Text
 #[derive(Component)]
@@ -84,12 +84,12 @@ fn update_hud(
             .map(|t| t.translation())
             .unwrap_or(Vec3::ZERO);
 
-        let biom = chunk_manager.get_biom_at(pos.x.floor() as i32, pos.z.floor() as i32);
+        // let biom = WorldGenerator.get_biom_at(pos.x.floor() as i32, pos.z.floor() as i32);
         
         // Text updaten
         **text = format!(
             "FPS: {:.0}\nPos: {:.1}, {:.1}, {:.1}\nChunk Pos: {:.0}, {:.0}\nBiom: {:.1}",
-            fps_counter.fps, pos.x, pos.y, pos.z, pos.x / 16.0, pos.z / 16.0, biom // Da Chunk breite = 16 Blöcke
+            fps_counter.fps, pos.x, pos.y, pos.z, pos.x / 16.0, pos.z / 16.0, 0 // Da Chunk breite = 16 Blöcke
         );
     }
 }

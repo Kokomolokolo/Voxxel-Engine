@@ -4,7 +4,7 @@ use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 use std::collections::HashMap;
 
 //use noise::{Fbm, Perlin};
-use crate::world_gen::*;
+use crate::world::WorldGenerator;
 
 pub const CHUNK_WIDTH: usize = 16;
 pub const CHUNK_HEIGHT: usize = 128; // falls ich das später noch ändern will
@@ -144,7 +144,7 @@ impl Chunk {
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_indices(Indices::U32(indices));
-    // mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
 
     mesh
@@ -213,6 +213,7 @@ fn add_cube_faces(
     if render_top {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "top");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [1.0, 1.0, 1.0, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x, pos.y + 1.0, pos.z],           // 0
@@ -222,7 +223,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,
@@ -233,6 +234,7 @@ fn add_cube_faces(
     if render_bottom {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "bottom");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [0.5, 0.5, 0.5, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x, pos.y, pos.z],                 // 0
@@ -242,7 +244,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[0.0, -1.0, 0.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,
@@ -253,6 +255,7 @@ fn add_cube_faces(
     if render_right {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "side");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [0.8, 0.8, 0.8, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x + 1.0, pos.y, pos.z],           // 0
@@ -262,7 +265,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[1.0, 0.0, 0.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,
@@ -273,6 +276,7 @@ fn add_cube_faces(
     if render_left {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "side");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [0.8, 0.8, 0.8, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x, pos.y, pos.z + 1.0],           // 0
@@ -282,7 +286,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[-1.0, 0.0, 0.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,
@@ -293,6 +297,7 @@ fn add_cube_faces(
     if render_back {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "side");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [0.6, 0.6, 0.6, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x + 1.0, pos.y, pos.z + 1.0],     // 0
@@ -302,7 +307,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[0.0, 0.0, 1.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,
@@ -313,6 +318,7 @@ fn add_cube_faces(
     if render_front {
         let (atlas_x, atlas_y) = get_atlas_cords(block_type, "side");
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
+        let brighness = [0.6, 0.6, 0.6, 1.0];
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
             [pos.x, pos.y, pos.z],                 // 0
@@ -322,7 +328,7 @@ fn add_cube_faces(
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[0.0, 0.0, -1.0]; 4]);
-        // colors.extend_from_slice(&[color; 4]);
+        colors.extend_from_slice(&[brighness; 4]);
         indices.extend_from_slice(&[
             start, start+1, start+2,
             start, start+2, start+3,

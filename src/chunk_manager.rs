@@ -6,7 +6,7 @@ use rand::Rng;
 use std::collections::HashMap;
 
 use crate::chunk::*;
-use crate::world_gen::*;
+use crate::world::WorldGenerator;
 use crate::player::Player;
 
 pub struct ChunkManagerPlugin;
@@ -46,7 +46,7 @@ impl ChunkManager {
         let seed: u32 = rng.gen_range(0..1000);
         Self {
             chunks: HashMap::new(),
-            generator: WorldGenerator::new(seed, seed + 100)
+            generator: WorldGenerator::new(seed)
         }
     }
     pub fn spawn_chunk(
@@ -161,9 +161,9 @@ impl ChunkManager {
             *mesh_asset = new_mesh;
         }
     }
-    pub fn get_biom_at(&self, world_x: i32, world_z: i32) -> f64 {
-        self.generator.biom_noise.get([world_x as f64 * 1.5, world_z as f64 * 1.5])
-    }
+    // pub fn get_biom_at(&self, world_x: i32, world_z: i32) -> f64 {
+    //     self.generator..biom_noise.get([world_x as f64 * 1.5, world_z as f64 * 1.5])
+    // }
 }
 
 pub fn update_chunks(
@@ -235,7 +235,10 @@ fn setup_block_material(
 
     let material = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
-        cull_mode: None,
+        // cull_mode: None,
+        metallic: 0.3,
+        perceptual_roughness: 0.9,
+        reflectance: 0.3,
         ..default()
     });
 
