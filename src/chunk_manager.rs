@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::image::ImageSampler;
 use noise::NoiseFn;
 use rand::Rng;
 
@@ -12,6 +13,8 @@ pub struct ChunkManagerPlugin;
 impl Plugin for ChunkManagerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChunkManager::new());
+        app.add_systems(Startup, setup_block_material);
+        app.add_systems(Update, setup_texture_sampling);
         app.add_systems(Update, update_chunks);
     }
 }
@@ -28,10 +31,19 @@ pub struct ChunkManager {
 } // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
 // Sie werden dann über Bevy transform an den richtigen Ort platziert, wenn das das einfachste ist.
 
+#[derive(Resource)]
+pub struct BlockMaterial {
+    pub material: Handle<StandardMaterial>
+}
+#[derive(Resource)]
+struct BlockTexture {
+    handle: Handle<Image>,  // Damit wir später darauf zugreifen können
+}
+
 impl ChunkManager {
     pub fn new() -> Self {
-        let mut rng = rand::rng();
-        let seed: u32 = rng.random_range(0..1000);
+        let mut rng = rand::thread_rng();
+        let seed: u32 = rng.gen_range(0..1000);
         Self {
             chunks: HashMap::new(),
             generator: WorldGenerator::new(seed, seed + 100)
@@ -42,7 +54,8 @@ impl ChunkManager {
         pos: IVec2,
         commands: &mut Commands,           // Zum Entities erstellen
         meshes: &mut ResMut<Assets<Mesh>>, // Zum Mesh speichern
-        materials: &mut ResMut<Assets<StandardMaterial>>, // Zum Material speichern
+        // materials: &mut ResMut<Assets<StandardMaterial>>, // Zum Material speichern
+        block_material: &Res<BlockMaterial>
         //chunk_query: &Query<&Chunk>,
     ) {
         if self.chunks.contains_key(&pos) { // wenn der Chunk bereits existiert, dann fertig
@@ -66,11 +79,7 @@ impl ChunkManager {
 
         let entity = commands.spawn((
             Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::WHITE,
-                // alpha_mode: AlphaMode::Blend, für durchsichtiges Wasser oder Blätter, erst nach Texture Update
-                ..default()
-            })),
+            MeshMaterial3d(block_material.material.clone()),
             Transform::from_xyz(
                 pos.x as f32 * CHUNK_WIDTH as f32,
                 0.0,
@@ -161,7 +170,7 @@ pub fn update_chunks(
     mut chunk_manager: ResMut<ChunkManager>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    block_material: Res<BlockMaterial>,
     player_query: Query<&Transform, With<Player>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
@@ -181,7 +190,7 @@ pub fn update_chunks(
             }
             let chunk_pos = camera_chunk + ivec2(x, z);
             if !chunk_manager.chunks.contains_key(&chunk_pos) {
-                chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &mut materials);
+                chunk_manager.spawn_chunk(chunk_pos, &mut commands, &mut meshes, &block_material);
                 spawned_this_frame += 1;
             }
         }
@@ -215,4 +224,45 @@ pub fn despawn_chunks(
             commands.entity(entity).despawn();
         }
     }
+}
+
+fn setup_block_material(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>
+) {
+    let texture_handle: Handle<Image> = asset_server.load("textures/TextureAtlas.png");
+
+    let material = materials.add(StandardMaterial {
+        base_color_texture: Some(texture_handle.clone()),
+        cull_mode: None,
+        ..default()
+    });
+
+    commands.insert_resource(BlockMaterial {
+        material
+    });
+    commands.insert_resource(BlockTexture { 
+        handle: texture_handle  // Hier ohne clone, weil wir es übergeben
+    });
+}
+fn setup_texture_sampling(
+    mut images: ResMut<Assets<Image>>,      // Zugriff auf alle geladenen Bilder
+    block_texture: Res<BlockTexture>,        // Unser Handle von oben
+    mut done: Local<bool>,                   // Local = Variable die zwischen Frames gespeichert wird
+) {
+    // Wenn wir schon fertig sind, nichts mehr tun
+    if *done {
+        return;
+    }
+    
+    // Versuche die Textur zu holen (gibt None zurück wenn noch nicht geladen)
+    if let Some(image) = images.get_mut(&block_texture.handle) {
+        // Textur ist geladen! Jetzt Sampler ändern:
+        image.sampler = ImageSampler::nearest();
+        
+        // Merken dass wir fertig sind (damit das nicht jedes Frame läuft)
+        *done = true;
+    }
+    // Wenn None: Textur lädt noch, probieren wir nächstes Frame nochmal
 }
