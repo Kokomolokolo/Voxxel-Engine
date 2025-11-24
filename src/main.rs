@@ -4,7 +4,8 @@ mod chunk;
 mod hud;
 mod player;
 mod chunk_manager;
-mod world_gen;
+// mod world_gen;
+mod world;
 
 use camera::CameraPlugin;
 use chunk_manager::ChunkManagerPlugin;
@@ -12,9 +13,16 @@ use hud::HudPlugin;
 use player::PlayerPlugin;
 
 use bevy::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
+use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 // TODO / BUGS
 // Wenn ein in der luft schwebendes teil mit nichts verbunden ist verschidet es(vorallem bei chunk grenzen)
-
+// Color remake: Die Farben sind so dukel
+// Biome dynamisch machen: Rechnungen für biome in Biomen selber machen
+// Wasser und Bläter seperat rendern -> Transparenz
+// Wasser Logik
+// Strukturen?
+// Höhlen
 fn main() {
     #[cfg(target_arch = "wasm32")]
     let window = Window {
@@ -30,19 +38,30 @@ fn main() {
         resolution: (1280., 720.).into(),
         ..default()
     };
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(window),
-            ..default()
-        }))
-        .add_plugins((
+    
+    let mut app = App::new();
+    
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(window),
+        ..default()
+    }));
+    
+    // Only add WireframePlugin on non-WASM targets
+    #[cfg(not(target_arch = "wasm32"))]
+    app.add_plugins(WireframePlugin::default());
+    
+    app.add_plugins((
             PlayerPlugin,
             CameraPlugin,
             ChunkManagerPlugin,
             HudPlugin,
         ))
-        .add_systems(Startup, setup,)
-        .add_systems(Update, exit_on_esc)
+        .add_systems(Startup, setup)
+        .add_systems(Update, (
+            exit_on_esc,
+            #[cfg(not(target_arch = "wasm32"))]
+            toggle_wireframe
+        ))
         .run();
 }
 
@@ -81,5 +100,17 @@ fn exit_on_esc(
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn toggle_wireframe(
+    mut wireframe_config: ResMut<WireframeConfig>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    // Mit F3 Taste togglen
+    if keyboard.just_pressed(KeyCode::F3) {
+        wireframe_config.global = !wireframe_config.global;
+        println!("Wireframe: {}", wireframe_config.global);
     }
 }

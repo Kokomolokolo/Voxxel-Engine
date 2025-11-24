@@ -4,7 +4,7 @@ use bevy::render::mesh::{Indices, Mesh, PrimitiveTopology};
 use std::collections::HashMap;
 
 //use noise::{Fbm, Perlin};
-use crate::world_gen::*;
+use crate::world::*;
 
 pub const CHUNK_WIDTH: usize = 16;
 pub const CHUNK_HEIGHT: usize = 128; // falls ich das später noch ändern will
@@ -95,10 +95,11 @@ impl Chunk {
             neighbor.is_solid(local_x, y, local_z)
         } else {
             // Chunk nicht geladen -> als solid behandeln (keine Fläche rendern)
-            true
+            // nvm
+            false
         }
     }
-    pub fn build_mesh(&self) -> Mesh {
+    pub fn build_mesh(&self, neighbors: &HashMap<IVec2, &Chunk>) -> Mesh {
         // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
         // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
         let mut vertices: Vec<[f32; 3]> = Vec::new();
@@ -125,12 +126,12 @@ impl Chunk {
                         &mut indices,
                         &mut colors,
                         &mut uvs,
-                        !self.is_solid(x as i32, y as i32 + 1, z as i32),
-                        !self.is_solid(x as i32, y as i32 - 1, z as i32),
-                        !self.is_solid(x as i32 + 1, y as i32, z as i32),
-                        !self.is_solid(x as i32 - 1 ,y as i32, z as i32),
-                        !self.is_solid(x as i32, y as i32, z as i32 + 1),
-                        !self.is_solid(x as i32, y as i32, z as i32 - 1),
+                        !self.is_solid_global(x as i32, y as i32 + 1, z as i32, neighbors),
+                        !self.is_solid_global(x as i32, y as i32 - 1, z as i32, neighbors),
+                        !self.is_solid_global(x as i32 + 1, y as i32, z as i32, neighbors),
+                        !self.is_solid_global(x as i32 - 1 ,y as i32, z as i32, neighbors),
+                        !self.is_solid_global(x as i32, y as i32, z as i32 + 1, neighbors),
+                        !self.is_solid_global(x as i32, y as i32, z as i32 - 1, neighbors),
                     );
 
                 }
