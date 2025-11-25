@@ -1,7 +1,7 @@
-use bevy::platform::collections::HashSet;
+// use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
 use bevy::image::ImageSampler;
-use noise::NoiseFn;
+// use noise::NoiseFn;
 use rand::Rng;
 
 use std::collections::HashMap;
@@ -29,8 +29,8 @@ pub const RENDER_DISTACE: i32 = 12;
 #[derive(Resource)]
 pub struct ChunkManager {
     chunks: HashMap<IVec2, Entity>,
-    generator: WorldGenerator,
-    dirty_chunks: HashSet<IVec2>,
+    pub generator: WorldGenerator,
+    // dirty_chunks: HashSet<IVec2>,
 } // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
 // Sie werden dann über Bevy transform an den richtigen Ort platziert, wenn das das einfachste ist.
 
@@ -50,7 +50,7 @@ impl ChunkManager {
         Self {
             chunks: HashMap::new(),
             generator: WorldGenerator::new(seed),
-            dirty_chunks: HashSet::new(),
+            // dirty_chunks: HashSet::new(),
         }
     }
     pub fn spawn_chunk(
@@ -68,16 +68,16 @@ impl ChunkManager {
 
         let chunk = Chunk::new(pos, &self.generator);
         // Nachbarn sammeln - erstmal raus da ich das gesammte mesh oft neu bauen müsste, habe da keine Lust drauf
-        let mut neighbors: HashMap<IVec2, &Chunk> = HashMap::new();
-        for offset in [IVec2::new(-1, 0), IVec2::new(1, 0), IVec2::new(0, -1), IVec2::new(0, 1)] {
-            let neighbor_pos = pos + offset;
-            if let Some(&entity) = self.chunks.get(&neighbor_pos) {
-                if let Ok(neighbor_chunk) = chunk_query.get(entity) {
-                    neighbors.insert(neighbor_pos, neighbor_chunk);
-                }
-            }
-        }
-        let mesh = chunk.build_mesh(&neighbors);
+        // let mut neighbors: HashMap<IVec2, &Chunk> = HashMap::new();
+        // for offset in [IVec2::new(-1, 0), IVec2::new(1, 0), IVec2::new(0, -1), IVec2::new(0, 1)] {
+        //     let neighbor_pos = pos + offset;
+        //     if let Some(&entity) = self.chunks.get(&neighbor_pos) {
+        //         if let Ok(neighbor_chunk) = chunk_query.get(entity) {
+        //             neighbors.insert(neighbor_pos, neighbor_chunk);
+        //         }
+        //     }
+        // }
+        let mesh = chunk.build_mesh();
 
         // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
 
@@ -92,14 +92,6 @@ impl ChunkManager {
             chunk,
         )).id();
         self.chunks.insert(pos, entity);
-
-        // Nachbar Chunks als "dirty" makieren: Sie müssen neu gebaut werden
-        for offset in [IVec2::new(-1, 0), IVec2::new(1, 0), IVec2::new(0, -1), IVec2::new(0, 1)] {
-            let neighbor_pos = pos + offset;
-            if self.chunks.contains_key(&neighbor_pos) {
-                self.dirty_chunks.insert(neighbor_pos);
-            }
-        }
     }
 
     pub fn get_world_block(&self, world_pos: Vec3, chunk_query: &Query<&Chunk>) -> Option<BlockType> { // da möglicherweise der Block nicht geladen ist etc
@@ -168,25 +160,9 @@ impl ChunkManager {
         chunk.set_block(local_x, local_y, local_z, block_type);
 
         // Mesh wird hier nicht neu gebaut, auf die liste gesetzt welche neu gebaut wird
-        // let new_mesh = chunk.build_mesh();
-        // if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
-        //     *mesh_asset = new_mesh;
-        // }
-        // Eigene Chunk wird als dirty makeirt
-        self.dirty_chunks.insert(chunk_pos);
-    
-        // Wenn an Chunk-Grenze, auch Nachbarn markieren
-        if local_x == 0 {
-            self.dirty_chunks.insert(chunk_pos + IVec2::new(-1, 0));
-        }
-        if local_x == CHUNK_WIDTH - 1 {
-            self.dirty_chunks.insert(chunk_pos + IVec2::new(1, 0));
-        }
-        if local_z == 0 {
-            self.dirty_chunks.insert(chunk_pos + IVec2::new(0, -1));
-        }
-        if local_z == CHUNK_WIDTH - 1 {
-            self.dirty_chunks.insert(chunk_pos + IVec2::new(0, 1));
+        let new_mesh = chunk.build_mesh();
+        if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
+            *mesh_asset = new_mesh;
         }
     }
 }
@@ -197,7 +173,7 @@ pub fn update_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     block_material: Res<BlockMaterial>,
     player_query: Query<&Transform, With<Player>>,
-    chunk_query: Query<(&Chunk, &Mesh3d)>,
+    // mut chunk_query: Query<(&Chunk, &Mesh3d)>,
     chunk_query2: Query<&Chunk>, // WIESO DAS SO IST: ICH WEIß NICHT WIE ES BESSER IST aber naja wenn performance zu bad ist dann ist das so
 ) {
     let Ok(player_transform) = player_query.single() else {
@@ -225,47 +201,38 @@ pub fn update_chunks(
             break;
         }
     }
-    // Dirty Chunks rebuilden
-    const MAX_REBUILDS_PER_FRAME: usize = 6;
-    let mut rebuilds_couter = 0;
+    // // Dirty Chunks rebuilden - Führt aktuell zu zu großen Lags :/
+    // const MAX_REBUILDS_PER_FRAME: usize = 6;
+    // let mut rebuilds_couter = 0;
 
-    // Dirty Chunks in einem Vektor sammeln
-    let chunks_to_rebuild: Vec<_> = chunk_manager.dirty_chunks
-        .iter()
-        .copied()
-        .take(MAX_REBUILDS_PER_FRAME)
-        .collect();
+    // // Dirty Chunks in einem Vektor sammeln
+    // let chunks_to_rebuild: Vec<_> = chunk_manager.dirty_chunks
+    //     .iter()
+    //     .copied()
+    //     .take(MAX_REBUILDS_PER_FRAME)
+    //     .collect();
 
-    for chunk_pos in chunks_to_rebuild {
-        chunk_manager.dirty_chunks.remove(&chunk_pos);
+    // for chunk_pos in chunks_to_rebuild {
+    //     chunk_manager.dirty_chunks.remove(&chunk_pos);
 
-        // Prüfen ob der Chunk überhaupt noch existiert + Entity holen
-        let Some(&entity) = chunk_manager.chunks.get(&chunk_pos) else {
-            continue;
-        };
+    //     // Prüfen ob der Chunk überhaupt noch existiert + Entity holen
+    //     let Some(&entity) = chunk_manager.chunks.get(&chunk_pos) else {
+    //         continue;
+    //     };
 
-        let Ok((chunk, mesh_handle)) = chunk_query.get(entity) else {
-            continue;
-        };
-        // Nachbarn sammeln - erstmal raus da ich das gesammte mesh oft neu bauen müsste, habe da keine Lust drauf
-        let mut neighbors: HashMap<IVec2, &Chunk> = HashMap::new();
-        for offset in [IVec2::new(-1, 0), IVec2::new(1, 0), IVec2::new(0, -1), IVec2::new(0, 1)] {
-            let neighbor_pos = chunk_pos + offset;
-            if let Some(&neighbor_entity) = chunk_manager.chunks.get(&neighbor_pos) {
-                if let Ok((neighbor_chunk, _)) = chunk_query.get(neighbor_entity) {
-                    neighbors.insert(neighbor_pos, neighbor_chunk);
-                }
-            }
-        }
-        let new_mesh = chunk.build_mesh(&neighbors);
+    //     let Ok((chunk, mesh_handle)) = chunk_query.get(entity) else {
+    //         continue;
+    //     };
 
-        // Mesh asset updaten
-        if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
-            *mesh_asset = new_mesh;
-        }
+    //     let new_mesh = chunk.build_mesh();
+
+    //     // Mesh asset updaten
+    //     if let Some(mesh_asset) = meshes.get_mut(&mesh_handle.0) {
+    //         *mesh_asset = new_mesh;
+    //     }
         
-        rebuilds_couter += 1;
-    }
+    //     rebuilds_couter += 1;
+    // }
 
 
 
@@ -310,6 +277,9 @@ fn setup_block_material(
     let material = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
         cull_mode: None,
+        metallic: 0.0,
+        reflectance: 0.3,
+        perceptual_roughness: 0.8,
         ..default()
     });
 
@@ -318,7 +288,7 @@ fn setup_block_material(
     });
     commands.insert_resource(BlockTexture { 
         handle: texture_handle  // Hier ohne clone, weil wir es übergeben
-    });
+    }); 
 }
 fn setup_texture_sampling(
     mut images: ResMut<Assets<Image>>,      // Zugriff auf alle geladenen Bilder

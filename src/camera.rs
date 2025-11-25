@@ -9,7 +9,8 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, setup_camera);
         app.add_systems(Update, (
             camera_look, 
-            lock_cursor_on_click
+            lock_cursor_on_click,
+            unlock_cursor_esc
         ));
     }
 }
@@ -53,6 +54,19 @@ pub fn lock_cursor_on_click(
         if let Ok(mut window) = windows.single_mut() {
             window.cursor_options.grab_mode = CursorGrabMode::Locked;
             window.cursor_options.visible = false;
+        }
+    }
+}
+
+fn unlock_cursor_esc(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut exit: EventWriter<AppExit>,
+    mut windows: Query<&mut Window>,
+) {
+    if keys.just_pressed(KeyCode::Escape) {
+        if let Ok(mut window) = windows.single_mut() {
+            window.cursor_options.grab_mode = CursorGrabMode::None;
+            window.cursor_options.visible = true;
         }
     }
 }

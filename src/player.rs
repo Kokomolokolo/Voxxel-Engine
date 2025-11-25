@@ -99,6 +99,7 @@ pub fn player_movement(
     if !player.flight { 
         direction.y = 0.0;
     }
+    direction.y = 0.0;
     // Damit diagonale Bewegung nicht schneller ist:
     if direction.length() > 0.0 {
         direction = direction.normalize();
@@ -120,11 +121,11 @@ pub fn player_movement(
     }
     let speed = if player.flight {
         // SUPERSPEEEEED mit P
-        if keys.pressed(KeyCode::KeyG) { 30.0 } else {
-            10.0
+        if keys.pressed(KeyCode::KeyG) { 40.0 } else {
+            20.0
         }
     } else {
-        4.0
+        7.0
     };
     if player.flight {
         player.velocity = direction * speed;

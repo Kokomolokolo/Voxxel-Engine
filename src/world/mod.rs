@@ -6,7 +6,6 @@ use biomes::*;
 use tarrain::*;
 use features::*;
 
-use noise::{NoiseFn, Perlin, Fbm};
 use bevy::prelude::IVec2;
 
 use crate::chunk::{BlockType, CHUNK_HEIGHT, CHUNK_WIDTH};
@@ -32,11 +31,14 @@ impl WorldGenerator {
     pub fn get_block_at(&self, world_x: i32, world_y: i32, world_z: i32) -> BlockType {
         let height = self.get_height(world_x, world_z);
         let biom = self.get_biom(world_x, world_z);
-
+        const WATER_HEIGHT:i32 = 24;
+        if self.tarrain.is_cave(world_x, world_y, world_z) {
+            return BlockType::Air;
+        }
         let depth = height - world_y;
         let biom_surface =  biom.get_surface_block(depth); 
         if world_y >= height {
-            if world_y < 24 { // Wasser Level
+            if world_y < WATER_HEIGHT { // Wasser Level
                 return BlockType::Water;
             }
             return BlockType::Air;
@@ -56,5 +58,8 @@ impl WorldGenerator {
     }
     pub fn generate_trees(&self, blocks: &mut [BlockType; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT], chunk_pos: IVec2) {
         self.features.generate_trees(blocks, &self.tarrain, chunk_pos);
+    }
+    pub fn generate_lava_lake(&self, blocks: &mut [BlockType; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT], chunk_pos: IVec2) {
+        self.features.spawn_lavalake(blocks, &self.tarrain, chunk_pos);
     }
 }

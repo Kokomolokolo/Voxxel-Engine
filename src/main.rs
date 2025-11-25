@@ -17,12 +17,12 @@ use bevy::prelude::*;
 use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 // TODO / BUGS
 // Wenn ein in der luft schwebendes teil mit nichts verbunden ist verschidet es(vorallem bei chunk grenzen)
-// Color remake: Die Farben sind so dukel
-// Biome dynamisch machen: Rechnungen für biome in Biomen selber machen
+// Color remake: Die Farben sind so dukel -> Hoffe ist jetzt besser
 // Wasser und Bläter seperat rendern -> Transparenz
-// Wasser Logik
+// Wasser Logik, Animation: Lags? da jedes mal das gesammte Chunk mesh neu gebaut werden muss
 // Strukturen?
-// Höhlen
+// Höhlen - Aber die gehen doch noch schöner?
+// Tiere
 fn main() {
     #[cfg(target_arch = "wasm32")]
     let window = Window {
@@ -57,11 +57,10 @@ fn main() {
             HudPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (
-            exit_on_esc,
+        .add_systems(Update, 
             #[cfg(not(target_arch = "wasm32"))]
             toggle_wireframe
-        ))
+        )
         .run();
 }
 
@@ -94,14 +93,14 @@ fn setup(
 
 
 }
-fn exit_on_esc(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut exit: EventWriter<AppExit>,
-) {
-    if keys.just_pressed(KeyCode::Escape) {
-        exit.write(AppExit::Success);
-    }
-}
+// fn exit_on_esc(
+//     keys: Res<ButtonInput<KeyCode>>,
+//     mut exit: EventWriter<AppExit>,
+// ) {
+//     if keys.just_pressed(KeyCode::Escape) {
+//         exit.write(AppExit::Success);
+//     }
+// }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn toggle_wireframe(
