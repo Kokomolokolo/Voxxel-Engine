@@ -49,6 +49,8 @@ fn main() {
     // Only add WireframePlugin on non-WASM targets
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(WireframePlugin::default());
+    #[cfg(not(target_arch = "wasm32"))]
+    app.add_systems(Update, toggle_wireframe);
     
     app.add_plugins((
             PlayerPlugin,
@@ -57,10 +59,6 @@ fn main() {
             HudPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, 
-            #[cfg(not(target_arch = "wasm32"))]
-            toggle_wireframe
-        )
         .run();
 }
 

@@ -278,8 +278,8 @@ fn setup_block_material(
         base_color_texture: Some(texture_handle.clone()),
         cull_mode: None,
         metallic: 0.0,
-        reflectance: 0.3,
-        perceptual_roughness: 0.8,
+        reflectance: 0.5,
+        perceptual_roughness: 0.4,
         ..default()
     });
 

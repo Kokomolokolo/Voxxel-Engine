@@ -219,10 +219,10 @@ fn add_cube_faces(
         let uv_cords = calculate_uvs(atlas_x, atlas_y);
         let start = vertices.len() as u32;
         vertices.extend_from_slice(&[
-            [pos.x, pos.y + height + EPSILON, pos.z],           // 0
-            [pos.x, pos.y + height + EPSILON, pos.z + 1.0],     // 1
-            [pos.x + 1.0, pos.y + height + EPSILON, pos.z + 1.0], // 2
-            [pos.x + 1.0, pos.y + height + EPSILON, pos.z],     // 3
+            [pos.x, pos.y + height, pos.z],           // 0
+            [pos.x, pos.y + height, pos.z + 1.0],     // 1
+            [pos.x + 1.0, pos.y + height, pos.z + 1.0], // 2
+            [pos.x + 1.0, pos.y + height, pos.z],     // 3
         ]);
         uvs.extend_from_slice(&uv_cords);
         normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
