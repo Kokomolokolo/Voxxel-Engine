@@ -193,7 +193,8 @@ pub fn player_mine_place(
     mut chunk_manager: ResMut<ChunkManager>,
     mut chunk_query: Query<(&mut Chunk, &Mesh3d)>, // 2 verschiedne, damit alles mesh bezogene in chunks.rs bleibt
     mut meshes: ResMut<Assets<Mesh>>,
-    mut player_query: Query<&mut Player>
+    mut player_query: Query<&mut Player>,
+    mut materials: ResMut<Assets<StandardMaterial>>
 ) {
     let Ok(camera_tranform) = camera_query.single() else {
         return

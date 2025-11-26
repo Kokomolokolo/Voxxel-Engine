@@ -28,7 +28,7 @@ pub const RENDER_DISTACE: i32 = 12;
 
 #[derive(Resource)]
 pub struct ChunkManager {
-    chunks: HashMap<IVec2, Entity>,
+    chunks: HashMap<IVec2, Entity>, // 2 Entities für Solid und Liquid
     pub generator: WorldGenerator,
     // dirty_chunks: HashSet<IVec2>,
 } // Hier weiter machen. Die Positionen der Chunks müssen gespeichert werden, und in pos gespeichert werden.
@@ -77,7 +77,9 @@ impl ChunkManager {
         //         }
         //     }
         // }
-        let mesh = chunk.build_mesh();
+        let solid_mesh = chunk.build_solid_mesh();
+        let transparent_mesh = chunk.build_transparent_mesh();
+        // let mesh = chunk.build_mesh();
 
         // let mesh_handle = meshes.add(mesh); // Damit verfügbar in Res<Mesh>
 

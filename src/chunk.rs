@@ -103,7 +103,7 @@ impl Chunk {
             false
         }
     }
-    pub fn build_mesh(&self) -> Mesh {
+    pub fn build_solid_mesh(&self) -> Mesh {
         // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
         // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
         let mut vertices: Vec<[f32; 3]> = Vec::new();
@@ -115,7 +115,9 @@ impl Chunk {
             for z in 0..CHUNK_WIDTH {
                 for y in 0..CHUNK_HEIGHT {
                     let block: BlockType = self.get_block(x, y, z);
-                    if block == BlockType::Air {
+                    if block == BlockType::Air
+                    || block == BlockType::Water
+                    || block == BlockType::Lava {
                         continue;
                     }
                     // Am Ende: Entweder alle Meshes zu einem Mesh zusammenfassen via PrimitivTopology::TriangleList 
@@ -137,25 +139,72 @@ impl Chunk {
                         !self.is_solid(x as i32, y as i32, z as i32 + 1),
                         !self.is_solid(x as i32, y as i32, z as i32 - 1),
                     );
-
+                    }
                 }
             }
-         }
+        create_mesh(vertices, normals, indices, colors, uvs)
+    }
+    pub fn build_transparent_mesh(&self) -> Mesh {
+        // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
+        // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
+        let mut vertices: Vec<[f32; 3]> = Vec::new();
+        let mut normals: Vec<[f32; 3]> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+        let mut colors: Vec<[f32; 4]> = Vec::new();
+        let mut uvs: Vec<[f32; 2]> = Vec::new();
+        for x in 0..CHUNK_WIDTH {
+            for z in 0..CHUNK_WIDTH {
+                for y in 0..CHUNK_HEIGHT {
+                    let block: BlockType = self.get_block(x, y, z);
+                    // Nur die transparenten Blöcke
+                    if block != BlockType::Water && block != BlockType::Lava {
+                        continue;
+                    }
+                    // Am Ende: Entweder alle Meshes zu einem Mesh zusammenfassen via PrimitivTopology::TriangleList 
+                    // ein neues Chunk mesh machen, dass gesammt zurück gegeben wird. Das ist glaube ich besser.
+                    // dann müssten alle verticies, indices und normals in einem gesammt vec gespeichert werden, und dann alle Zusammen eingefügt werden.
+                    let pos = Vec3::new(x as f32, y as f32, z as f32);
+                    add_cube_faces(
+                        pos,
+                        block,
+                        &mut vertices, 
+                        &mut normals, 
+                        &mut indices,
+                        &mut colors,
+                        &mut uvs,
+                        !self.is_solid(x as i32, y as i32 + 1, z as i32),
+                        !self.is_solid(x as i32, y as i32 - 1, z as i32),
+                        !self.is_solid(x as i32 + 1, y as i32, z as i32),
+                        !self.is_solid(x as i32 - 1 ,y as i32, z as i32),
+                        !self.is_solid(x as i32, y as i32, z as i32 + 1),
+                        !self.is_solid(x as i32, y as i32, z as i32 - 1),
+                    );
+                }
+            }
+        }
+        create_mesh(vertices, normals, indices, colors, uvs)
+    }
+}
+fn create_mesh(
+    vertices: Vec<[f32; 3]>,
+    normals: Vec<[f32; 3]> ,
+    indices: Vec<u32>,
+    colors: Vec<[f32; 4]>,
+    uvs: Vec<[f32; 2]>,
+) -> Mesh {
     let mut mesh = Mesh::new(
-        PrimitiveTopology::TriangleList, 
+        PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),
     );
-
+    
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_indices(Indices::U32(indices));
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-
+    
     mesh
-    }
 }
-
 fn get_atlas_cords(block_type: BlockType, face: &str) -> (usize, usize) {
     // Gibt x, y im 16x16 Grid des Texture atlas zurück
     match (block_type, face) {

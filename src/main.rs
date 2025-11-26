@@ -81,7 +81,7 @@ fn setup(
     ));
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 100.0, 
+        brightness: 200.0,
         ..default()
     });
     // Himmel
