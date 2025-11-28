@@ -9,7 +9,7 @@ use crate::world::*;
 pub const CHUNK_WIDTH: usize = 16;
 pub const CHUNK_HEIGHT: usize = 128; // falls ich das später noch ändern will
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Chunk {
     pos: IVec2,
     blocks: [BlockType; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT] // 1d Array: [type; size]
@@ -65,14 +65,30 @@ impl Chunk {
              return false
         }
         if self.get_block(x as usize, y as usize, z as usize) == BlockType::Air 
-           || self.get_block(x as usize, y as usize, z as usize) == BlockType::Water
+           // || self.get_block(x as usize, y as usize, z as usize) == BlockType::Water
         {
             return false
         } else {
             return true
         }
     }
-    
+    pub fn should_render_transparent_face(&self, x: i32, y: i32, z: i32, block_type: BlockType) -> bool {
+        if x >= CHUNK_WIDTH as i32 || x < 0 || 
+           y >= CHUNK_HEIGHT as i32 || y < 0 || 
+           z >= CHUNK_WIDTH as i32 || z < 0 {
+            // An Chunk-Grenzen: nicht rendern (wird vom Nachbar-Chunk gerendert)
+            return true;
+        }
+        
+        let neighbor = self.get_block(x as usize, y as usize, z as usize);
+        
+        // Render die Fläche wenn:
+        // - Nachbar ist Luft, ODER
+        // - Nachbar ist ein solider Block, ODER
+        // - Nachbar ist ein ANDERER transparenter Block (Wasser gegen Lava)
+        neighbor == BlockType::Air || 
+        (neighbor != block_type && neighbor != BlockType::Air)
+    }
     // Über chunkgrenzen hinaus checken. Habe darauf aber gerade keine Lust mehr.
     pub fn is_solid_global(&self, 
         x: i32, 
@@ -172,12 +188,12 @@ impl Chunk {
                         &mut indices,
                         &mut colors,
                         &mut uvs,
-                        !self.is_solid(x as i32, y as i32 + 1, z as i32),
-                        !self.is_solid(x as i32, y as i32 - 1, z as i32),
-                        !self.is_solid(x as i32 + 1, y as i32, z as i32),
-                        !self.is_solid(x as i32 - 1 ,y as i32, z as i32),
-                        !self.is_solid(x as i32, y as i32, z as i32 + 1),
-                        !self.is_solid(x as i32, y as i32, z as i32 - 1),
+                        self.should_render_transparent_face(x as i32, y as i32 + 1, z as i32, block),
+                        self.should_render_transparent_face(x as i32, y as i32 - 1, z as i32, block),
+                        self.should_render_transparent_face(x as i32 + 1, y as i32, z as i32, block),
+                        self.should_render_transparent_face(x as i32 - 1 ,y as i32, z as i32, block),
+                        self.should_render_transparent_face(x as i32, y as i32, z as i32 + 1, block),
+                        self.should_render_transparent_face(x as i32, y as i32, z as i32 - 1, block),
                     );
                 }
             }
@@ -257,7 +273,7 @@ fn add_cube_faces(
     const EPSILON: f32 = 0.001;
     // Wasser ist weniger Hoch
     let height = if block_type == BlockType::Water || block_type ==  BlockType::Lava {
-        0.8
+        1.0
     } else {
         1.0
     };

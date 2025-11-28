@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::camera::FpsCamera;
 use crate::chunk::{BlockType, Chunk, CHUNK_WIDTH};
-use crate::chunk_manager::{ChunkManager, RENDER_DISTACE};
+use crate::chunk_manager::{ChunkManager, RENDER_DISTACE, TransparentChunk, SolidChunk};
 
 pub struct PlayerPlugin;
 
@@ -194,6 +194,7 @@ pub fn player_mine_place(
     mut chunk_query: Query<(&mut Chunk, &Mesh3d)>, // 2 verschiedne, damit alles mesh bezogene in chunks.rs bleibt
     mut meshes: ResMut<Assets<Mesh>>,
     mut player_query: Query<&mut Player>,
+    transparent_query: Query<&Mesh3d, With<TransparentChunk>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 ) {
     let Ok(camera_tranform) = camera_query.single() else {
@@ -232,6 +233,7 @@ pub fn player_mine_place(
                     chunk_manager.set_world_block(block_pos,
                         BlockType::Air, 
                         &mut chunk_query, 
+                        &transparent_query,
                         &mut meshes
                     );
                     break;
@@ -283,6 +285,7 @@ pub fn player_mine_place(
                     chunk_manager.set_world_block(air_pos, 
                         player.selected_block, 
                         &mut chunk_query, 
+                        &transparent_query,
                         &mut meshes
                     );
                 }
