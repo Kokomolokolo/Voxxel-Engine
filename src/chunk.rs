@@ -65,30 +65,15 @@ impl Chunk {
              return false
         }
         if self.get_block(x as usize, y as usize, z as usize) == BlockType::Air 
-           // || self.get_block(x as usize, y as usize, z as usize) == BlockType::Water
+           || self.get_block(x as usize, y as usize, z as usize) == BlockType::Water // TODO: Das ist nur ein Hack, da jetzt auch faces zwischen Wasser als true gesehenw werden
+           || self.get_block(x as usize, y as usize, z as usize) == BlockType::Lava
         {
             return false
         } else {
             return true
         }
     }
-    pub fn should_render_transparent_face(&self, x: i32, y: i32, z: i32, block_type: BlockType) -> bool {
-        if x >= CHUNK_WIDTH as i32 || x < 0 || 
-           y >= CHUNK_HEIGHT as i32 || y < 0 || 
-           z >= CHUNK_WIDTH as i32 || z < 0 {
-            // An Chunk-Grenzen: nicht rendern (wird vom Nachbar-Chunk gerendert)
-            return true;
-        }
-        
-        let neighbor = self.get_block(x as usize, y as usize, z as usize);
-        
-        // Render die Fläche wenn:
-        // - Nachbar ist Luft, ODER
-        // - Nachbar ist ein solider Block, ODER
-        // - Nachbar ist ein ANDERER transparenter Block (Wasser gegen Lava)
-        neighbor == BlockType::Air || 
-        (neighbor != block_type && neighbor != BlockType::Air)
-    }
+    
     // Über chunkgrenzen hinaus checken. Habe darauf aber gerade keine Lust mehr.
     pub fn is_solid_global(&self, 
         x: i32, 
@@ -132,8 +117,9 @@ impl Chunk {
                 for y in 0..CHUNK_HEIGHT {
                     let block: BlockType = self.get_block(x, y, z);
                     if block == BlockType::Air
-                    || block == BlockType::Water
-                    || block == BlockType::Lava {
+                    //|| block == BlockType::Water
+                    //|| block == BlockType::Lava 
+                    {
                         continue;
                     }
                     // Am Ende: Entweder alle Meshes zu einem Mesh zusammenfassen via PrimitivTopology::TriangleList 
@@ -158,46 +144,6 @@ impl Chunk {
                     }
                 }
             }
-        create_mesh(vertices, normals, indices, colors, uvs)
-    }
-    pub fn build_transparent_mesh(&self) -> Mesh {
-        // Verticies, normale und indices werden hier gespeichert. Jeder Block schreibt seine werte hier rein.
-        // Die gesammten Werte werden in einem gesammten Chunk mesh zurück gegeben.
-        let mut vertices: Vec<[f32; 3]> = Vec::new();
-        let mut normals: Vec<[f32; 3]> = Vec::new();
-        let mut indices: Vec<u32> = Vec::new();
-        let mut colors: Vec<[f32; 4]> = Vec::new();
-        let mut uvs: Vec<[f32; 2]> = Vec::new();
-        for x in 0..CHUNK_WIDTH {
-            for z in 0..CHUNK_WIDTH {
-                for y in 0..CHUNK_HEIGHT {
-                    let block: BlockType = self.get_block(x, y, z);
-                    // Nur die transparenten Blöcke
-                    if block != BlockType::Water && block != BlockType::Lava {
-                        continue;
-                    }
-                    // Am Ende: Entweder alle Meshes zu einem Mesh zusammenfassen via PrimitivTopology::TriangleList 
-                    // ein neues Chunk mesh machen, dass gesammt zurück gegeben wird. Das ist glaube ich besser.
-                    // dann müssten alle verticies, indices und normals in einem gesammt vec gespeichert werden, und dann alle Zusammen eingefügt werden.
-                    let pos = Vec3::new(x as f32, y as f32, z as f32);
-                    add_cube_faces(
-                        pos,
-                        block,
-                        &mut vertices, 
-                        &mut normals, 
-                        &mut indices,
-                        &mut colors,
-                        &mut uvs,
-                        self.should_render_transparent_face(x as i32, y as i32 + 1, z as i32, block),
-                        self.should_render_transparent_face(x as i32, y as i32 - 1, z as i32, block),
-                        self.should_render_transparent_face(x as i32 + 1, y as i32, z as i32, block),
-                        self.should_render_transparent_face(x as i32 - 1 ,y as i32, z as i32, block),
-                        self.should_render_transparent_face(x as i32, y as i32, z as i32 + 1, block),
-                        self.should_render_transparent_face(x as i32, y as i32, z as i32 - 1, block),
-                    );
-                }
-            }
-        }
         create_mesh(vertices, normals, indices, colors, uvs)
     }
 }
@@ -273,7 +219,7 @@ fn add_cube_faces(
     const EPSILON: f32 = 0.001;
     // Wasser ist weniger Hoch
     let height = if block_type == BlockType::Water || block_type ==  BlockType::Lava {
-        1.0
+        0.8
     } else {
         1.0
     };
